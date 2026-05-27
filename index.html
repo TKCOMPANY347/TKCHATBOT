@@ -17,7 +17,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            /* MELHORIA 4: height: 100dvh se adapta perfeitamente ao teclado do celular */
             height: 100vh;
+            height: 100dvh; 
             width: 100vw;
             overflow: hidden;
         }
@@ -73,13 +75,13 @@
         }
 
         .auth-form {
-            display: none; /* Escondido por padrão */
+            display: none;
             flex-direction: column;
             gap: 15px;
         }
 
         .auth-form.active {
-            display: flex; /* Mostra apenas a aba ativa */
+            display: flex;
         }
 
         .auth-content h2 {
@@ -115,7 +117,7 @@
 
         /* TELA DO CHAT FULL SCREEN */
         .chat-container {
-            display: none; /* Só aparece após o login */
+            display: none;
             width: 100%;
             height: 100%;
             background-color: #fff;
@@ -123,26 +125,44 @@
             overflow: hidden;
         }
 
+        /* MELHORIA 1: Header responsivo com flexbox para evitar quebras no celular */
         .chat-header {
             background-color: #075e54;
             color: white;
-            padding: 15px;
+            padding: 12px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 1.1rem;
-            font-weight: bold;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        /* Texto do usuário com limite de espaço e rolagem interna discreta se necessário */
+        #userDisplay {
+            font-size: 0.95rem;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-right: 10px;
+            flex: 1;
         }
 
         .logout-btn {
             background-color: #e53935;
             color: white;
             border: none;
-            padding: 6px 12px;
-            border-radius: 5px;
+            padding: 6px 14px;
+            border-radius: 20px;
             cursor: pointer;
             font-size: 0.85rem;
+            font-weight: bold;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .logout-btn:hover {
+            background-color: #c62828;
         }
 
         .chat-messages {
@@ -152,61 +172,124 @@
             background-color: #efeae2;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 4px; /* Menor espaçamento para dar efeito de agrupamento */
         }
 
+        /* MELHORIA 2: Design do Balão de Conversa Estilo WhatsApp */
         .message {
             max-width: 75%;
-            padding: 8px 12px;
-            border-radius: 8px;
+            padding: 6px 12px 6px 10px;
             font-size: 0.95rem;
             word-wrap: break-word;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 2px;
         }
 
-        .message .sender-email {
-            font-size: 0.75rem;
-            color: #777;
-            display: block;
-            margin-bottom: 3px;
-            font-weight: bold;
-        }
-
+        /* Estilo base para mensagens enviadas por VOCÊ */
         .message.sent {
             background-color: #d9fdd3;
             align-self: flex-end;
+            border-radius: 8px 0px 8px 8px;
         }
 
+        /* Estilo base para mensagens recebidas dos OUTROS */
         .message.received {
             background-color: #fff;
             align-self: flex-start;
+            border-radius: 0px 8px 8px 8px;
         }
 
+        /* Efeito de espaçamento maior apenas quando muda o autor da mensagem */
+        .message.new-group {
+            margin-top: 8px;
+        }
+
+        /* Biquinho do balão enviado */
+        .message.sent.new-group::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: -8px;
+            width: 8px;
+            height: 10px;
+            background: linear-gradient(135deg, #d9fdd3 50%, transparent 50%);
+        }
+
+        /* Biquinho do balão recebido */
+        .message.received.new-group::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -8px;
+            width: 8px;
+            height: 10px;
+            background: linear-gradient(45deg, transparent 50%, #fff 50%);
+        }
+
+        /* Nome de quem enviou (E-mail) */
+        .message .sender-email {
+            font-size: 0.75rem;
+            color: #00a884; /* Cor de destaque para o nome */
+            display: block;
+            margin-bottom: 3px;
+            font-weight: 600;
+        }
+
+        /* Bloco de conteúdo para alinhar texto e horário */
+        .message-content-wrapper {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 15px;
+        }
+
+        .message-text {
+            flex: 1;
+        }
+
+        /* MELHORIA 3: Estilo minúsculo do Horário integrado ao balão */
+        .message-time {
+            font-size: 0.68rem;
+            color: #667781;
+            white-space: nowrap;
+            user-select: none;
+            margin-bottom: -2px;
+        }
+
+        /* Rodapé de digitação */
         .chat-input-area {
             display: flex;
-            padding: 15px;
+            padding: 10px 15px;
             background-color: #f0f0f0;
             gap: 10px;
             border-top: 1px solid #e0e0e0;
+            align-items: center;
         }
 
         .chat-input-area input {
             flex: 1;
-            padding: 12px;
-            border: 1px solid #ccc;
-            border-radius: 20px;
+            padding: 11px 15px;
+            border: 1px solid #fff;
+            border-radius: 24px;
             outline: none;
             font-size: 1rem;
+            background-color: #fff;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.05);
         }
 
         .chat-input-area button {
             background-color: #00a884;
             color: white;
             border: none;
-            padding: 0 25px;
-            border-radius: 20px;
+            padding: 11px 24px;
+            border-radius: 24px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: bold;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -254,6 +337,7 @@
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
+        // MANTIDO: Suas credenciais originais intactas
         const firebaseConfig = {
             apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
             authDomain: "tkbot-d91db.firebaseapp.com",
@@ -312,8 +396,6 @@
         });
 
         // --- LÓGICA DE AUTENTICAÇÃO ---
-
-        // Executar Login (Aba 1)
         submitLoginBtn.addEventListener('click', async () => {
             const email = loginEmail.value.trim();
             const password = loginPassword.value;
@@ -333,7 +415,6 @@
             }
         });
 
-        // Executar Cadastro (Aba 2)
         submitRegisterBtn.addEventListener('click', async () => {
             const email = registerEmail.value.trim();
             const password = registerPassword.value;
@@ -359,12 +440,10 @@
             }
         });
 
-        // Botão Sair
         logoutBtn.addEventListener('click', () => {
             signOut(auth);
         });
 
-        // Monitor de Sessão do Usuário
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
@@ -381,8 +460,7 @@
             }
         });
 
-        // --- LÓGICA DO CHAT EM TEMPO REAL ---
-
+        // --- LÓGICA DO CHAT EM TEMPO REAL COM MELHORIAS VISUAIS ---
         async function sendMessage() {
             const messageText = messageInput.value.trim();
             if (messageText === '' || !currentUser) return;
@@ -405,18 +483,42 @@
             
             unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
                 chatMessages.innerHTML = '';
+                let lastSenderId = null; // Guarda quem mandou a mensagem anterior
 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     if (!data.timestamp) return;
 
                     const messageType = data.senderId === currentUser.uid ? 'sent' : 'received';
+                    
+                    // MELHORIA 2 (Lógica): Só cria um novo grupo se mudar o autor da mensagem
+                    const isNewGroup = data.senderId !== lastSenderId;
+                    lastSenderId = data.senderId;
+
+                    // MELHORIA 3: Formata o horário (Ex: 20:37)
+                    const firebaseDate = data.timestamp.toDate();
+                    const hours = String(firebaseDate.getHours()).padStart(2, '0');
+                    const minutes = String(firebaseDate.getMinutes()).padStart(2, '0');
+                    const timeString = `${hours}:${minutes}`;
+
                     const messageDiv = document.createElement('div');
                     messageDiv.classList.add('message', messageType);
+                    if (isNewGroup) {
+                        messageDiv.classList.add('new-group'); // Adiciona o biquinho e margem extra
+                    }
                     
-                    const emailHeader = messageType === 'received' ? `<span class="sender-email">${data.senderEmail}</span>` : '';
+                    // Só mostra o e-mail se a mensagem for recebida E for o início de um bloco de mensagens daquela pessoa
+                    const emailHeader = (messageType === 'received' && isNewGroup) ? `<span class="sender-email">${data.senderEmail}</span>` : '';
                     
-                    messageDiv.innerHTML = `${emailHeader}${data.text}`;
+                    // Estrutura interna para acomodar texto e hora perfeitamente alinhados
+                    messageDiv.innerHTML = `
+                        ${emailHeader}
+                        <div class="message-content-wrapper">
+                            <span class="message-text">${data.text}</span>
+                            <span class="message-time">${timeString}</span>
+                        </div>
+                    `;
+                    
                     chatMessages.appendChild(messageDiv);
                 });
 
