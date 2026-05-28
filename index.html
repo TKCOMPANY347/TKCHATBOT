@@ -2,23 +2,21 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TK Chat</title>
     <style>
         body { font-family: sans-serif; background: #f0f2f5; margin: 0; display: flex; justify-content: center; height: 100vh; }
         #authContainer, #chatContainer { width: 100%; max-width: 400px; background: white; height: 100%; display: flex; flex-direction: column; }
         #chatHeader { padding: 15px; background: #075e54; color: white; font-weight: bold; }
         #chatMessages { flex: 1; padding: 15px; overflow-y: auto; background: #efeae2; }
-        .input-area { padding: 10px; display: flex; border-top: 1px solid #ccc; background: white; }
-        input { flex: 1; padding: 10px; border: 1px solid #ccc; }
-        button { padding: 10px; cursor: pointer; }
-        .msg { margin-bottom: 10px; padding: 8px; background: white; border-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+        .input-area { padding: 10px; display: flex; border-top: 1px solid #ccc; }
+        input { flex: 1; padding: 10px; }
+        .msg { margin-bottom: 10px; padding: 8px; background: white; border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <div id="authContainer">
-        <h2 style="text-align:center">Login</h2>
+        <h2>Login</h2>
         <input type="email" id="email" placeholder="E-mail">
         <input type="password" id="password" placeholder="Senha">
         <button id="loginBtn">Entrar</button>
@@ -36,8 +34,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getDatabase, ref, set, onDisconnect, serverTimestamp as rtdbTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getDatabase, ref, push, onValue, set, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
@@ -52,7 +49,6 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
-        const firestore = getFirestore(app);
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -60,21 +56,19 @@
                 document.getElementById('chatContainer').style.display = 'flex';
                 document.getElementById('userDisplay').innerText = user.email + " (Online)";
 
-                // Lógica do Status Online
+                // Lógica Online (Realtime Database)
                 const statusRef = ref(db, 'status/' + user.uid);
-                set(statusRef, { state: 'online', last_changed: rtdbTimestamp() });
-                onDisconnect(statusRef).set({ state: 'offline', last_changed: rtdbTimestamp() });
+                set(statusRef, { state: 'online' });
+                onDisconnect(statusRef).set({ state: 'offline' });
 
-                // Escutar mensagens do Firestore
-                const q = query(collection(firestore, "messages"), orderBy("timestamp", "asc"));
-                onSnapshot(q, (snapshot) => {
+                // Lógica de Mensagens (Realtime Database)
+                const messagesRef = ref(db, 'messages');
+                onValue(messagesRef, (snapshot) => {
                     const msgDiv = document.getElementById('chatMessages');
                     msgDiv.innerHTML = '';
-                    snapshot.forEach(doc => {
-                        const data = doc.data();
-                        // Se o 'sender' for undefined, mostra o e-mail ou 'Anônimo'
-                        const sender = data.sender || user.email || "Anônimo";
-                        msgDiv.innerHTML += `<div class="msg"><b>${sender}:</b> ${data.text}</div>`;
+                    snapshot.forEach((child) => {
+                        const data = child.val();
+                        msgDiv.innerHTML += `<div class="msg"><b>${data.sender}:</b> ${data.text}</div>`;
                     });
                     msgDiv.scrollTop = msgDiv.scrollHeight;
                 });
@@ -82,24 +76,14 @@
         });
 
         document.getElementById('loginBtn').addEventListener('click', () => {
-            signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
-            .catch(e => alert("Erro ao entrar: " + e.message));
+            signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
         });
 
-        document.getElementById('sendBtn').addEventListener('click', async () => {
+        document.getElementById('sendBtn').addEventListener('click', () => {
             const input = document.getElementById('msgInput');
-            const text = input.value;
-            if(text && auth.currentUser) {
-                try {
-                    await addDoc(collection(firestore, "messages"), { 
-                        text: text, 
-                        sender: auth.currentUser.email, 
-                        timestamp: serverTimestamp() 
-                    });
-                    input.value = '';
-                } catch (e) {
-                    alert("Erro ao enviar. Verifique as permissões do Firestore.");
-                }
+            if(input.value) {
+                push(ref(db, 'messages'), { text: input.value, sender: auth.currentUser.email });
+                input.value = '';
             }
         });
     </script>
