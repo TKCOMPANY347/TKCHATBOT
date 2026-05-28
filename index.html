@@ -3,40 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TK Chat Completo</title>
+    <title>TK Chat - Estável</title>
     <style>
         body, html { height: 100%; margin: 0; font-family: sans-serif; }
-        #authContainer { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f0f2f5; padding: 20px; }
-        #authContainer input { width: 100%; max-width: 350px; padding: 15px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; }
-        #authContainer button { width: 100%; max-width: 350px; padding: 15px; margin-top: 5px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; }
+        #authContainer { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f0f2f5; }
+        #authContainer input, #authContainer button { width: 300px; padding: 12px; margin: 5px; border-radius: 8px; border: 1px solid #ccc; }
         #chatContainer { height: 100%; display: flex; flex-direction: column; }
-        #chatHeader { padding: 10px; background: #075e54; color: white; display: flex; justify-content: space-between; align-items: center; }
-        #presencePanel { padding: 5px; background: #e0e0e0; font-size: 12px; text-align: center; }
-        #chatMessages { flex: 1; padding: 15px; overflow-y: auto; background: #efeae2; }
-        .input-area { padding: 10px; display: flex; background: white; border-top: 1px solid #ccc; }
-        input#msgInput { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        #chatHeader { padding: 15px; background: #075e54; color: white; display: flex; justify-content: space-between; }
+        #chatMessages { flex: 1; padding: 20px; overflow-y: auto; background: #efeae2; }
+        .input-area { padding: 15px; display: flex; background: white; border-top: 1px solid #ccc; }
+        input { flex: 1; padding: 10px; }
+        button { padding: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="authContainer">
-        <h2>TK Chat - Acesso</h2>
-        <input type="email" id="email" placeholder="Seu E-mail">
-        <input type="password" id="password" placeholder="Sua Senha">
-        <button id="loginBtn" style="background: #075e54;">Entrar</button>
-        <button id="registerBtn" style="background: #27ae60;">Criar Nova Conta</button>
+        <h2>Acesso ao Chat</h2>
+        <input type="email" id="email" placeholder="E-mail">
+        <input type="password" id="password" placeholder="Senha">
+        <button id="loginBtn" style="background:#075e54; color:white;">Entrar</button>
+        <button id="registerBtn" style="background:#27ae60; color:white;">Criar Conta</button>
     </div>
 
     <div id="chatContainer" style="display:none;">
         <div id="chatHeader">
             <span id="userDisplay"></span>
-            <button id="logoutBtn" style="background:#c0392b; border:none; color:white; padding:5px 10px;">Sair</button>
+            <button id="logoutBtn">Sair</button>
         </div>
-        <div id="presencePanel">Carregando status...</div>
         <div id="chatMessages"></div>
         <div class="input-area">
             <input type="text" id="msgInput" placeholder="Mensagem...">
-            <button id="sendBtn" style="background:#075e54; color:white; border:none; padding:10px;">Enviar</button>
+            <button id="sendBtn">Enviar</button>
         </div>
     </div>
 
@@ -65,23 +63,21 @@
                 document.getElementById('chatContainer').style.display = 'flex';
                 document.getElementById('userDisplay').innerText = user.email;
 
-                // Status Online
-                const statusRef = ref(db, 'status/' + user.uid);
-                set(statusRef, { state: 'online', email: user.email });
-                onDisconnect(statusRef).set({ state: 'offline' });
-
-                onValue(ref(db, 'status'), (snap) => {
-                    let online = [];
-                    snap.forEach(s => { if(s.val().state === 'online') online.push(s.val().email); });
-                    document.getElementById('presencePanel').innerText = "Online: " + online.join(', ');
-                });
-
+                // Carregar apenas mensagens (o mais importante)
                 onValue(ref(db, 'messages'), (snap) => {
                     const div = document.getElementById('chatMessages');
                     div.innerHTML = '';
-                    snap.forEach(s => div.innerHTML += `<div><b>${s.val().sender}:</b> ${s.val().text}</div>`);
+                    snap.forEach(s => {
+                        const data = s.val();
+                        div.innerHTML += `<div><b>${data.sender}:</b> ${data.text}</div>`;
+                    });
                     div.scrollTop = div.scrollHeight;
                 });
+
+                // Atualizar status de forma isolada
+                const statusRef = ref(db, 'status/' + user.uid.replace(/\./g, '_'));
+                set(statusRef, { state: 'online' });
+                onDisconnect(statusRef).set({ state: 'offline' });
             } else {
                 document.getElementById('authContainer').style.display = 'flex';
                 document.getElementById('chatContainer').style.display = 'none';
@@ -90,16 +86,10 @@
 
         document.getElementById('loginBtn').onclick = () => signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
         document.getElementById('registerBtn').onclick = () => createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
-        document.getElementById('logoutBtn').onclick = () => {
-            if(auth.currentUser) set(ref(db, 'status/' + auth.currentUser.uid), { state: 'offline' });
-            signOut(auth);
-        };
+        document.getElementById('logoutBtn').onclick = () => signOut(auth);
         document.getElementById('sendBtn').onclick = () => {
-            const input = document.getElementById('msgInput');
-            if(input.value) {
-                push(ref(db, 'messages'), { text: input.value, sender: auth.currentUser.email });
-                input.value = '';
-            }
+            push(ref(db, 'messages'), { text: document.getElementById('msgInput').value, sender: auth.currentUser.email });
+            document.getElementById('msgInput').value = '';
         };
     </script>
 </body>
