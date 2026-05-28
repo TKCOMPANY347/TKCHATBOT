@@ -9,9 +9,10 @@
         #authContainer, #chatContainer { width: 100%; max-width: 400px; background: white; height: 100%; display: flex; flex-direction: column; }
         #chatHeader { padding: 15px; background: #075e54; color: white; font-weight: bold; }
         #chatMessages { flex: 1; padding: 15px; overflow-y: auto; background: #efeae2; }
-        .input-area { padding: 10px; display: flex; border-top: 1px solid #ccc; }
-        input { flex: 1; padding: 10px; }
-        .msg { margin-bottom: 10px; padding: 8px; background: white; border-radius: 5px; }
+        .input-area { padding: 10px; display: flex; border-top: 1px solid #ccc; background: white; }
+        input { flex: 1; padding: 10px; border: 1px solid #ccc; }
+        button { padding: 10px; cursor: pointer; }
+        .msg { margin-bottom: 10px; padding: 8px; background: white; border-radius: 5px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -53,24 +54,25 @@
         const db = getDatabase(app);
         const firestore = getFirestore(app);
 
-        // Monitorar Status Online
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 document.getElementById('authContainer').style.display = 'none';
                 document.getElementById('chatContainer').style.display = 'flex';
                 document.getElementById('userDisplay').innerText = user.email + " (Online)";
 
+                // Status Online
                 const statusRef = ref(db, 'status/' + user.uid);
                 set(statusRef, { state: 'online', last_changed: rtdbTimestamp() });
                 onDisconnect(statusRef).set({ state: 'offline', last_changed: rtdbTimestamp() });
 
-                // Carregar Mensagens
+                // Carregar mensagens do Firestore
                 const q = query(collection(firestore, "messages"), orderBy("timestamp", "asc"));
                 onSnapshot(q, (snapshot) => {
                     const msgDiv = document.getElementById('chatMessages');
                     msgDiv.innerHTML = '';
                     snapshot.forEach(doc => {
-                        msgDiv.innerHTML += `<div class="msg"><b>${doc.data().sender}:</b> ${doc.data().text}</div>`;
+                        const data = doc.data();
+                        msgDiv.innerHTML += `<div class="msg"><b>${data.sender}:</b> ${data.text}</div>`;
                     });
                     msgDiv.scrollTop = msgDiv.scrollHeight;
                 });
@@ -78,13 +80,19 @@
         });
 
         document.getElementById('loginBtn').addEventListener('click', () => {
-            signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('password').value;
+            signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Erro ao entrar"));
         });
 
         document.getElementById('sendBtn').addEventListener('click', async () => {
             const text = document.getElementById('msgInput').value;
-            if(text) {
-                await addDoc(collection(firestore, "messages"), { text, sender: auth.currentUser.email, timestamp: serverTimestamp() });
+            if(text && auth.currentUser) {
+                await addDoc(collection(firestore, "messages"), { 
+                    text: text, 
+                    sender: auth.currentUser.email, 
+                    timestamp: serverTimestamp() 
+                });
                 document.getElementById('msgInput').value = '';
             }
         });
