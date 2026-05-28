@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Seguro com Abas de Acesso</title>
+    <title>Chat Seguro com Chatbot TK Company</title>
     <style>
         * {
             box-sizing: border-box;
@@ -17,7 +17,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            /* MELHORIA 4: height: 100dvh se adapta perfeitamente ao teclado do celular */
             height: 100vh;
             height: 100dvh; 
             width: 100vw;
@@ -36,7 +35,6 @@
             flex-direction: column;
         }
 
-        /* MENU DE ABAS */
         .auth-tabs {
             display: flex;
             background-color: #f0f0f0;
@@ -52,12 +50,7 @@
             font-weight: bold;
             color: #555;
             cursor: pointer;
-            transition: all 0.2s;
             text-align: center;
-        }
-
-        .tab-btn:hover {
-            background-color: #e8e8e8;
         }
 
         .tab-btn.active {
@@ -66,7 +59,6 @@
             border-bottom: 3px solid #00a884;
         }
 
-        /* CONTEÚDO DOS FORMULÁRIOS */
         .auth-content {
             padding: 30px;
             display: flex;
@@ -108,14 +100,9 @@
             cursor: pointer;
             font-size: 1rem;
             font-weight: bold;
-            transition: background 0.2s;
         }
 
-        .auth-content button:hover {
-            background-color: #008f72;
-        }
-
-        /* TELA DO CHAT FULL SCREEN */
+        /* TELA DO CHAT */
         .chat-container {
             display: none;
             width: 100%;
@@ -125,7 +112,6 @@
             overflow: hidden;
         }
 
-        /* MELHORIA 1: Header responsivo com flexbox para evitar quebras no celular */
         .chat-header {
             background-color: #075e54;
             color: white;
@@ -137,7 +123,6 @@
             z-index: 10;
         }
 
-        /* Texto do usuário com limite de espaço e rolagem interna discreta se necessário */
         #userDisplay {
             font-size: 0.95rem;
             font-weight: bold;
@@ -157,12 +142,6 @@
             cursor: pointer;
             font-size: 0.85rem;
             font-weight: bold;
-            transition: background 0.2s;
-            flex-shrink: 0;
-        }
-
-        .logout-btn:hover {
-            background-color: #c62828;
         }
 
         .chat-messages {
@@ -172,10 +151,9 @@
             background-color: #efeae2;
             display: flex;
             flex-direction: column;
-            gap: 4px; /* Menor espaçamento para dar efeito de agrupamento */
+            gap: 4px;
         }
 
-        /* MELHORIA 2: Design do Balão de Conversa Estilo WhatsApp */
         .message {
             max-width: 75%;
             padding: 6px 12px 6px 10px;
@@ -187,26 +165,28 @@
             margin-bottom: 2px;
         }
 
-        /* Estilo base para mensagens enviadas por VOCÊ */
         .message.sent {
             background-color: #d9fdd3;
             align-self: flex-end;
             border-radius: 8px 0px 8px 8px;
         }
 
-        /* Estilo base para mensagens recebidas dos OUTROS */
         .message.received {
             background-color: #fff;
             align-self: flex-start;
             border-radius: 0px 8px 8px 8px;
         }
 
-        /* Efeito de espaçamento maior apenas quando muda o autor da mensagem */
+        /* Estilo especial destacado para o Robô da empresa */
+        .message.bot-msg {
+            background-color: #ffffff;
+            border-left: 4px solid #00a884;
+        }
+
         .message.new-group {
             margin-top: 8px;
         }
 
-        /* Biquinho do balão enviado */
         .message.sent.new-group::before {
             content: "";
             position: absolute;
@@ -217,7 +197,6 @@
             background: linear-gradient(135deg, #d9fdd3 50%, transparent 50%);
         }
 
-        /* Biquinho do balão recebido */
         .message.received.new-group::before {
             content: "";
             position: absolute;
@@ -228,16 +207,19 @@
             background: linear-gradient(45deg, transparent 50%, #fff 50%);
         }
 
-        /* Nome de quem enviou (E-mail) */
         .message .sender-email {
             font-size: 0.75rem;
-            color: #00a884; /* Cor de destaque para o nome */
+            color: #00a884;
             display: block;
             margin-bottom: 3px;
             font-weight: 600;
         }
 
-        /* Bloco de conteúdo para alinhar texto e horário */
+        /* Estilo para destacar o nome do Robô */
+        .message .sender-email.bot-name {
+            color: #075e54;
+        }
+
         .message-content-wrapper {
             display: flex;
             flex-direction: row;
@@ -248,18 +230,16 @@
 
         .message-text {
             flex: 1;
+            white-space: pre-wrap; /* Garante que as quebras de linha dos menus apareçam certinho */
         }
 
-        /* MELHORIA 3: Estilo minúsculo do Horário integrado ao balão */
         .message-time {
             font-size: 0.68rem;
             color: #667781;
             white-space: nowrap;
-            user-select: none;
             margin-bottom: -2px;
         }
 
-        /* Rodapé de digitação */
         .chat-input-area {
             display: flex;
             padding: 10px 15px;
@@ -295,6 +275,7 @@
 </head>
 <body>
 
+    <!-- PORTAL DE AUTENTICAÇÃO -->
     <div class="auth-container" id="authContainer">
         <div class="auth-tabs">
             <button class="tab-btn active" id="tabLoginBtn">Entrar</button>
@@ -318,6 +299,7 @@
         </div>
     </div>
 
+    <!-- TELA DO CHAT -->
     <div class="chat-container" id="chatContainer">
         <div class="chat-header">
             <span id="userDisplay">Carregando usuário...</span>
@@ -327,17 +309,17 @@
         <div class="chat-messages" id="chatMessages"></div>
 
         <div class="chat-input-area">
-            <input type="text" id="messageInput" placeholder="Digite uma mensagem..." autocomplete="off">
+            <input type="text" id="messageInput" placeholder="Digite uma mensagem ou número do menu..." autocomplete="off">
             <button id="sendButton">Enviar</button>
         </div>
     </div>
 
+    <!-- CONFIGURAÇÃO DO FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // MANTIDO: Suas credenciais originais intactas
         const firebaseConfig = {
             apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
             authDomain: "tkbot-d91db.firebaseapp.com",
@@ -352,25 +334,19 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Elementos de Controle de Interface
+        // Elementos HTML
         const authContainer = document.getElementById('authContainer');
         const chatContainer = document.getElementById('chatContainer');
         const tabLoginBtn = document.getElementById('tabLoginBtn');
         const tabRegisterBtn = document.getElementById('tabRegisterBtn');
         const loginForm = document.getElementById('loginForm');
         const registerForm = document.getElementById('registerForm');
-
-        // Inputs e Botões - Login
         const loginEmail = document.getElementById('loginEmail');
         const loginPassword = document.getElementById('loginPassword');
         const submitLoginBtn = document.getElementById('submitLoginBtn');
-
-        // Inputs e Botões - Cadastro
         const registerEmail = document.getElementById('registerEmail');
         const registerPassword = document.getElementById('registerPassword');
         const submitRegisterBtn = document.getElementById('submitRegisterBtn');
-
-        // Elementos do Chat
         const userDisplay = document.getElementById('userDisplay');
         const logoutBtn = document.getElementById('logoutBtn');
         const chatMessages = document.getElementById('chatMessages');
@@ -380,69 +356,31 @@
         let currentUser = null;
         let unsubscribeSnapshot = null;
 
-        // --- SISTEMA DE TROCA DE ABAS VISUAIS ---
+        // --- CONTROLE DE ABAS ---
         tabLoginBtn.addEventListener('click', () => {
-            tabLoginBtn.classList.add('active');
-            tabRegisterBtn.classList.remove('active');
-            loginForm.classList.add('active');
-            registerForm.classList.remove('active');
+            tabLoginBtn.classList.add('active'); tabRegisterBtn.classList.remove('active');
+            loginForm.classList.add('active'); registerForm.classList.remove('active');
         });
-
         tabRegisterBtn.addEventListener('click', () => {
-            tabRegisterBtn.classList.add('active');
-            tabLoginBtn.classList.remove('active');
-            registerForm.classList.add('active');
-            loginForm.classList.remove('active');
+            tabRegisterBtn.classList.add('active'); tabLoginBtn.classList.remove('active');
+            registerForm.classList.add('active'); loginForm.classList.remove('active');
         });
 
-        // --- LÓGICA DE AUTENTICAÇÃO ---
+        // --- AUTENTICAÇÃO ---
         submitLoginBtn.addEventListener('click', async () => {
-            const email = loginEmail.value.trim();
-            const password = loginPassword.value;
-
-            if (!email || !password) {
-                alert("Por favor, digite o e-mail e a senha para entrar.");
-                return;
-            }
-
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                loginEmail.value = "";
-                loginPassword.value = "";
-            } catch (error) {
-                console.error(error);
-                alert("Erro ao entrar: E-mail ou senha incorretos.");
-            }
+            const email = loginEmail.value.trim(); const password = loginPassword.value;
+            if (!email || !password) return alert("Preencha todos os campos.");
+            try { await signInWithEmailAndPassword(auth, email, password); } catch (e) { alert("E-mail ou senha incorretos."); }
         });
 
         submitRegisterBtn.addEventListener('click', async () => {
-            const email = registerEmail.value.trim();
-            const password = registerPassword.value;
-
-            if (!email || !password) {
-                alert("Por favor, preencha todos os campos para se cadastrar.");
-                return;
-            }
-
-            if (password.length < 6) {
-                alert("A senha precisa ter pelo menos 6 caracteres.");
-                return;
-            }
-
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-                alert("Conta criada com sucesso! Você já foi conectado automaticamente.");
-                registerEmail.value = "";
-                registerPassword.value = "";
-            } catch (error) {
-                console.error(error);
-                alert("Erro no cadastro: " + error.message);
-            }
+            const email = registerEmail.value.trim(); const password = registerPassword.value;
+            if (!email || !password) return alert("Preencha todos os campos.");
+            if (password.length < 6) return alert("Mínimo 6 caracteres.");
+            try { await createUserWithEmailAndPassword(auth, email, password); alert("Cadastrado com sucesso!"); } catch (e) { alert("Erro no cadastro."); }
         });
 
-        logoutBtn.addEventListener('click', () => {
-            signOut(auth);
-        });
+        logoutBtn.addEventListener('click', () => signOut(auth));
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -460,57 +398,127 @@
             }
         });
 
-        // --- LÓGICA DO CHAT EM TEMPO REAL COM MELHORIAS VISUAIS ---
+        // --- LÓGICA DO CHATBOT DA TK COMPANY ---
+        
+        // Função para descobrir se é bom dia, tarde ou noite
+        function obterSaudacao() {
+            const hora = new Date().getHours();
+            if (hora >= 5 && hora < 12) return "Bom dia";
+            if (hora >= 12 && hora < 18) return "Boa tarde";
+            return "Boa noite";
+        }
+
+        // Menu estruturado de tópicos solicitado
+        const textoMenuPrincipal = `Olá! ${obterSaudacao()}! Sou o Atendente Virtual da *TK Company*. Como posso te ajudar hoje? 
+
+Por favor, digite o número da opção desejada:
+1️⃣ - Internet Ilimitada
+2️⃣ - Aplicativo de Streamer
+3️⃣ - Indicação
+4️⃣ - Suporte Técnico`;
+
+        // Lógica de respostas automáticas do Robô baseada nas escolhas
+        function processarRespostaBot(mensagemCliente) {
+            const textoLimpo = mensagemCliente.trim();
+
+            if (textoLimpo === '1') {
+                return `🌐 *Internet Ilimitada - TK Company*
+Nossos planos oferecem navegação ultraveloz sem redução de velocidade e sem franquia de consumo! Ideal para jogar, trabalhar e assistir em alta definição. 
+Para assinar ou saber valores, aguarde um instante que um atendente humano irá te chamar aqui no chat!`;
+            }
+            if (textoLimpo === '2') {
+                return `📺 *Aplicativo de Streamer - TK Company*
+Tenha acesso a milhares de canais ao vivo, filmes atualizados, séries e esportes direto na sua Smart TV, TV Box ou celular! Sem travamentos.
+Gostaria de solicitar um teste gratuito? Digite seu pedido aqui e aguarde o atendente.`;
+            }
+            if (textoLimpo === '3') {
+                return `🎁 *Programa de Indicação - TK Company*
+Quem indica, amigo é... e ganha desconto! 
+Indicando um novo cliente que feche qualquer plano com a gente, você ganha um super bônus na sua próxima mensalidade. Quanto mais indicar, mais economiza!`;
+            }
+            if (textoLimpo === '4') {
+                return `🛠️ *Suporte Técnico - TK Company*
+Precisa de ajuda com a sua conexão ou configuração?
+Deixe relatado aqui em uma única mensagem qual o problema que você está enfrentando. Nossa equipe técnica já foi notificada e vai te responder em instantes!`;
+            }
+
+            // Se digitar qualquer outra coisa, o robô manda o menu de tópicos de novo
+            return textoMenuPrincipal;
+        }
+
+        // --- FUNÇÃO PARA ENVIAR MENSAGENS ---
         async function sendMessage() {
             const messageText = messageInput.value.trim();
             if (messageText === '' || !currentUser) return;
 
+            messageInput.value = '';
+
             try {
+                // 1. Salva a mensagem que o cliente digitou no Firestore
                 await addDoc(collection(db, "messages"), {
                     text: messageText,
                     senderId: currentUser.uid,
                     senderEmail: currentUser.email,
                     timestamp: serverTimestamp()
                 });
-                messageInput.value = '';
+
+                // 2. O robô processa o texto e responde logo em seguida de forma automática (com um pequeno delay de 600ms para parecer real)
+                setTimeout(async () => {
+                    const respostaDoBot = processarRespostaBot(messageText);
+                    
+                    await addDoc(collection(db, "messages"), {
+                        text: respostaDoBot,
+                        senderId: "TK_BOT_SYSTEM", // ID único fixo para identificar que foi o Robô
+                        senderEmail: "Atendente Virtual (TK Company)",
+                        timestamp: serverTimestamp()
+                    });
+                }, 600);
+
             } catch (error) {
                 console.error("Erro ao enviar mensagem:", error);
             }
         }
 
+        // --- ESCUTAR CHAT EM TEMPO REAL ---
         function startChatListener() {
             const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
             
             unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
                 chatMessages.innerHTML = '';
-                let lastSenderId = null; // Guarda quem mandou a mensagem anterior
+                let lastSenderId = null;
 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     if (!data.timestamp) return;
 
-                    const messageType = data.senderId === currentUser.uid ? 'sent' : 'received';
+                    // Verifica se a mensagem foi enviada por você, recebida por outro usuário, ou criada pelo Robô
+                    let messageType = 'received';
+                    if (data.senderId === currentUser.uid) {
+                        messageType = 'sent';
+                    } else if (data.senderId === 'TK_BOT_SYSTEM') {
+                        messageType = 'received bot-msg'; // Aplica o estilo visual de Robô
+                    }
                     
-                    // MELHORIA 2 (Lógica): Só cria um novo grupo se mudar o autor da mensagem
                     const isNewGroup = data.senderId !== lastSenderId;
                     lastSenderId = data.senderId;
 
-                    // MELHORIA 3: Formata o horário (Ex: 20:37)
                     const firebaseDate = data.timestamp.toDate();
                     const hours = String(firebaseDate.getHours()).padStart(2, '0');
                     const minutes = String(firebaseDate.getMinutes()).padStart(2, '0');
                     const timeString = `${hours}:${minutes}`;
 
                     const messageDiv = document.createElement('div');
-                    messageDiv.classList.add('message', messageType);
-                    if (isNewGroup) {
-                        messageDiv.classList.add('new-group'); // Adiciona o biquinho e margem extra
-                    }
+                    messageDiv.classList.add('message');
+                    messageType.split(' ').forEach(cls => messageDiv.classList.add(cls));
                     
-                    // Só mostra o e-mail se a mensagem for recebida E for o início de um bloco de mensagens daquela pessoa
-                    const emailHeader = (messageType === 'received' && isNewGroup) ? `<span class="sender-email">${data.senderEmail}</span>` : '';
+                    if (isNewGroup) messageDiv.classList.add('new-group');
                     
-                    // Estrutura interna para acomodar texto e hora perfeitamente alinhados
+                    // Adiciona tag especial no cabeçalho se for o Robô
+                    let emailClass = "sender-email";
+                    if (data.senderId === 'TK_BOT_SYSTEM') emailClass += " bot-name";
+
+                    const emailHeader = (isNewGroup) ? `<span class="${emailClass}">${data.senderEmail}</span>` : '';
+                    
                     messageDiv.innerHTML = `
                         ${emailHeader}
                         <div class="message-content-wrapper">
