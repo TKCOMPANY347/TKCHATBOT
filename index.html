@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Seguro com Chatbot TK Company</title>
+    <title>Chat Seguro com IA Gemini - TK Company</title>
     <style>
         * {
             box-sizing: border-box;
@@ -177,10 +177,10 @@
             border-radius: 0px 8px 8px 8px;
         }
 
-        /* Estilo especial destacado para o Robô da empresa */
+        /* Estilo visual destacado para a Inteligência Artificial */
         .message.bot-msg {
             background-color: #ffffff;
-            border-left: 4px solid #00a884;
+            border-left: 4px solid #005fcc;
         }
 
         .message.new-group {
@@ -215,9 +215,8 @@
             font-weight: 600;
         }
 
-        /* Estilo para destacar o nome do Robô */
         .message .sender-email.bot-name {
-            color: #075e54;
+            color: #005fcc;
         }
 
         .message-content-wrapper {
@@ -230,7 +229,7 @@
 
         .message-text {
             flex: 1;
-            white-space: pre-wrap; /* Garante que as quebras de linha dos menus apareçam certinho */
+            white-space: pre-wrap;
         }
 
         .message-time {
@@ -275,7 +274,6 @@
 </head>
 <body>
 
-    <!-- PORTAL DE AUTENTICAÇÃO -->
     <div class="auth-container" id="authContainer">
         <div class="auth-tabs">
             <button class="tab-btn active" id="tabLoginBtn">Entrar</button>
@@ -299,7 +297,6 @@
         </div>
     </div>
 
-    <!-- TELA DO CHAT -->
     <div class="chat-container" id="chatContainer">
         <div class="chat-header">
             <span id="userDisplay">Carregando usuário...</span>
@@ -309,16 +306,18 @@
         <div class="chat-messages" id="chatMessages"></div>
 
         <div class="chat-input-area">
-            <input type="text" id="messageInput" placeholder="Digite uma mensagem ou número do menu..." autocomplete="off">
+            <input type="text" id="messageInput" placeholder="Pergunte qualquer coisa para a IA da TK..." autocomplete="off">
             <button id="sendButton">Enviar</button>
         </div>
     </div>
 
-    <!-- CONFIGURAÇÃO DO FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // SUA CHAVE CONFIGURADA E PRONTA AQUI:
+        const GEMINI_API_KEY = "AIzaSyD-zvmEOkhv1FLgf5t1w7Kt3ld7iQ_L0Xg";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
@@ -398,55 +397,37 @@
             }
         });
 
-        // --- LÓGICA DO CHATBOT DA TK COMPANY ---
-        
-        // Função para descobrir se é bom dia, tarde ou noite
-        function obterSaudacao() {
+        // --- FUNÇÃO PARA CONVERSAR COM O GEMINI ---
+        async function chamarInteligenciaGemini(mensagemUsuario) {
             const hora = new Date().getHours();
-            if (hora >= 5 && hora < 12) return "Bom dia";
-            if (hora >= 12 && hora < 18) return "Boa tarde";
-            return "Boa noite";
+            let saudacao = "Boa noite";
+            if (hora >= 5 && hora < 12) saudacao = "Bom dia";
+            else if (hora >= 12 && hora < 18) saudacao = "Boa tarde";
+
+            // Instruções de sistema para moldar a personalidade da IA
+            const instrucaoEmpresa = `Instrução: Você é o Atendente Virtual inteligente da empresa TK Company. Sempre inicie com '${saudacao}!'. Seja muito educado e prestativo. Seu foco principal é responder dúvidas sobre os tópicos da empresa se o cliente perguntar: Internet ilimitada, aplicativo de streamer, programa de indicação e suporte técnico. Se ele perguntar qualquer outra coisa fora disso, responda normalmente de forma inteligente e amigável como uma IA útil.`;
+
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `${instrucaoEmpresa}\n\nCliente perguntou: ${mensagemUsuario}` }] }]
+                    })
+                });
+
+                const data = await response.json();
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    return data.candidates[0].content.parts[0].text;
+                }
+                return "Desculpe, tive um probleminha para processar essa resposta agora.";
+            } catch (error) {
+                console.error("Erro na chamada do Gemini:", error);
+                return "Erro de conexão com a inteligência artificial.";
+            }
         }
 
-        // Menu estruturado de tópicos solicitado
-        const textoMenuPrincipal = `Olá! ${obterSaudacao()}! Sou o Atendente Virtual da *TK Company*. Como posso te ajudar hoje? 
-
-Por favor, digite o número da opção desejada:
-1️⃣ - Internet Ilimitada
-2️⃣ - Aplicativo de Streamer
-3️⃣ - Indicação
-4️⃣ - Suporte Técnico`;
-
-        // Lógica de respostas automáticas do Robô baseada nas escolhas
-        function processarRespostaBot(mensagemCliente) {
-            const textoLimpo = mensagemCliente.trim();
-
-            if (textoLimpo === '1') {
-                return `🌐 *Internet Ilimitada - TK Company*
-Nossos planos oferecem navegação ultraveloz sem redução de velocidade e sem franquia de consumo! Ideal para jogar, trabalhar e assistir em alta definição. 
-Para assinar ou saber valores, aguarde um instante que um atendente humano irá te chamar aqui no chat!`;
-            }
-            if (textoLimpo === '2') {
-                return `📺 *Aplicativo de Streamer - TK Company*
-Tenha acesso a milhares de canais ao vivo, filmes atualizados, séries e esportes direto na sua Smart TV, TV Box ou celular! Sem travamentos.
-Gostaria de solicitar um teste gratuito? Digite seu pedido aqui e aguarde o atendente.`;
-            }
-            if (textoLimpo === '3') {
-                return `🎁 *Programa de Indicação - TK Company*
-Quem indica, amigo é... e ganha desconto! 
-Indicando um novo cliente que feche qualquer plano com a gente, você ganha um super bônus na sua próxima mensalidade. Quanto mais indicar, mais economiza!`;
-            }
-            if (textoLimpo === '4') {
-                return `🛠️ *Suporte Técnico - TK Company*
-Precisa de ajuda com a sua conexão ou configuração?
-Deixe relatado aqui em uma única mensagem qual o problema que você está enfrentando. Nossa equipe técnica já foi notificada e vai te responder em instantes!`;
-            }
-
-            // Se digitar qualquer outra coisa, o robô manda o menu de tópicos de novo
-            return textoMenuPrincipal;
-        }
-
-        // --- FUNÇÃO PARA ENVIAR MENSAGENS ---
+        // --- ENVIAR MENSAGENS NO CHAT ---
         async function sendMessage() {
             const messageText = messageInput.value.trim();
             if (messageText === '' || !currentUser) return;
@@ -454,7 +435,7 @@ Deixe relatado aqui em uma única mensagem qual o problema que você está enfre
             messageInput.value = '';
 
             try {
-                // 1. Salva a mensagem que o cliente digitou no Firestore
+                // 1. Salva a mensagem do cliente no Firestore
                 await addDoc(collection(db, "messages"), {
                     text: messageText,
                     senderId: currentUser.uid,
@@ -462,82 +443,16 @@ Deixe relatado aqui em uma única mensagem qual o problema que você está enfre
                     timestamp: serverTimestamp()
                 });
 
-                // 2. O robô processa o texto e responde logo em seguida de forma automática (com um pequeno delay de 600ms para parecer real)
-                setTimeout(async () => {
-                    const respostaDoBot = processarRespostaBot(messageText);
-                    
-                    await addDoc(collection(db, "messages"), {
-                        text: respostaDoBot,
-                        senderId: "TK_BOT_SYSTEM", // ID único fixo para identificar que foi o Robô
-                        senderEmail: "Atendente Virtual (TK Company)",
-                        timestamp: serverTimestamp()
-                    });
-                }, 600);
-
-            } catch (error) {
-                console.error("Erro ao enviar mensagem:", error);
-            }
-        }
-
-        // --- ESCUTAR CHAT EM TEMPO REAL ---
-        function startChatListener() {
-            const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
-            
-            unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-                chatMessages.innerHTML = '';
-                let lastSenderId = null;
-
-                snapshot.forEach((doc) => {
-                    const data = doc.data();
-                    if (!data.timestamp) return;
-
-                    // Verifica se a mensagem foi enviada por você, recebida por outro usuário, ou criada pelo Robô
-                    let messageType = 'received';
-                    if (data.senderId === currentUser.uid) {
-                        messageType = 'sent';
-                    } else if (data.senderId === 'TK_BOT_SYSTEM') {
-                        messageType = 'received bot-msg'; // Aplica o estilo visual de Robô
-                    }
-                    
-                    const isNewGroup = data.senderId !== lastSenderId;
-                    lastSenderId = data.senderId;
-
-                    const firebaseDate = data.timestamp.toDate();
-                    const hours = String(firebaseDate.getHours()).padStart(2, '0');
-                    const minutes = String(firebaseDate.getMinutes()).padStart(2, '0');
-                    const timeString = `${hours}:${minutes}`;
-
-                    const messageDiv = document.createElement('div');
-                    messageDiv.classList.add('message');
-                    messageType.split(' ').forEach(cls => messageDiv.classList.add(cls));
-                    
-                    if (isNewGroup) messageDiv.classList.add('new-group');
-                    
-                    // Adiciona tag especial no cabeçalho se for o Robô
-                    let emailClass = "sender-email";
-                    if (data.senderId === 'TK_BOT_SYSTEM') emailClass += " bot-name";
-
-                    const emailHeader = (isNewGroup) ? `<span class="${emailClass}">${data.senderEmail}</span>` : '';
-                    
-                    messageDiv.innerHTML = `
-                        ${emailHeader}
-                        <div class="message-content-wrapper">
-                            <span class="message-text">${data.text}</span>
-                            <span class="message-time">${timeString}</span>
-                        </div>
-                    `;
-                    
-                    chatMessages.appendChild(messageDiv);
+                // 2. Aciona o Gemini direto pela API e salva a resposta inteligente no Firestore
+                const respostaDaIA = await chamarInteligenciaGemini(messageText);
+                
+                await addDoc(collection(db, "messages"), {
+                    text: respostaDaIA,
+                    senderId: "TK_GEMINI_AI", 
+                    senderEmail: "Inteligência Virtual (TK Company)",
+                    timestamp: serverTimestamp()
                 });
 
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            });
-        }
-
-        sendButton.addEventListener('click', sendMessage);
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-    </script>
-</body>
-</html>
+            } catch (error) {
+                console.error("Erro ao processar fluxo:", error);
+        
