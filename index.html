@@ -3,26 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TK Chat Full Screen</title>
+    <title>TK Chat Completo</title>
     <style>
         body, html { height: 100%; margin: 0; font-family: sans-serif; }
-        
-        /* Layout de Login */
         #authContainer { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f0f2f5; padding: 20px; }
-        #authContainer h2 { color: #075e54; margin-bottom: 20px; }
-        #authContainer input { width: 100%; max-width: 350px; padding: 15px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
-        #authContainer button { width: 100%; max-width: 350px; padding: 15px; margin-top: 10px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; }
-        .btn-login { background: #075e54; }
-        .btn-reg { background: #27ae60; }
-
-        /* Layout de Chat */
+        #authContainer input { width: 100%; max-width: 350px; padding: 15px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; }
+        #authContainer button { width: 100%; max-width: 350px; padding: 15px; margin-top: 5px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; }
         #chatContainer { height: 100%; display: flex; flex-direction: column; }
-        #chatHeader { padding: 15px; background: #075e54; color: white; display: flex; justify-content: space-between; align-items: center; }
-        #presencePanel { padding: 10px; background: #e0e0e0; font-size: 13px; text-align: center; border-bottom: 1px solid #ccc; }
-        #chatMessages { flex: 1; padding: 20px; overflow-y: auto; background: #efeae2; }
-        .input-area { padding: 15px; display: flex; background: white; border-top: 1px solid #ccc; }
-        input#msgInput { flex: 1; padding: 15px; border: 1px solid #ccc; border-radius: 5px; margin-right: 10px; }
-        button#sendBtn { padding: 0 25px; background: #075e54; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        #chatHeader { padding: 10px; background: #075e54; color: white; display: flex; justify-content: space-between; align-items: center; }
+        #presencePanel { padding: 5px; background: #e0e0e0; font-size: 12px; text-align: center; }
+        #chatMessages { flex: 1; padding: 15px; overflow-y: auto; background: #efeae2; }
+        .input-area { padding: 10px; display: flex; background: white; border-top: 1px solid #ccc; }
+        input#msgInput { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
     </style>
 </head>
 <body>
@@ -31,20 +23,20 @@
         <h2>TK Chat - Acesso</h2>
         <input type="email" id="email" placeholder="Seu E-mail">
         <input type="password" id="password" placeholder="Sua Senha">
-        <button id="loginBtn" class="btn-login">Entrar</button>
-        <button id="registerBtn" class="btn-reg">Criar Nova Conta</button>
+        <button id="loginBtn" style="background: #075e54;">Entrar</button>
+        <button id="registerBtn" style="background: #27ae60;">Criar Nova Conta</button>
     </div>
 
     <div id="chatContainer" style="display:none;">
         <div id="chatHeader">
             <span id="userDisplay"></span>
-            <button id="logoutBtn" style="background:#c0392b;">Sair</button>
+            <button id="logoutBtn" style="background:#c0392b; border:none; color:white; padding:5px 10px;">Sair</button>
         </div>
-        <div id="presencePanel">Carregando quem está online...</div>
+        <div id="presencePanel">Carregando status...</div>
         <div id="chatMessages"></div>
         <div class="input-area">
-            <input type="text" id="msgInput" placeholder="Escreva sua mensagem...">
-            <button id="sendBtn">Enviar</button>
+            <input type="text" id="msgInput" placeholder="Mensagem...">
+            <button id="sendBtn" style="background:#075e54; color:white; border:none; padding:10px;">Enviar</button>
         </div>
     </div>
 
@@ -73,23 +65,21 @@
                 document.getElementById('chatContainer').style.display = 'flex';
                 document.getElementById('userDisplay').innerText = user.email;
 
-                // Status: Online
+                // Status Online
                 const statusRef = ref(db, 'status/' + user.uid);
                 set(statusRef, { state: 'online', email: user.email });
                 onDisconnect(statusRef).set({ state: 'offline' });
 
-                // Painel de Presença
                 onValue(ref(db, 'status'), (snap) => {
-                    let onlineList = [];
-                    snap.forEach(s => { if(s.val().state === 'online') onlineList.push(s.val().email); });
-                    document.getElementById('presencePanel').innerText = "Online: " + onlineList.join(', ');
+                    let online = [];
+                    snap.forEach(s => { if(s.val().state === 'online') online.push(s.val().email); });
+                    document.getElementById('presencePanel').innerText = "Online: " + online.join(', ');
                 });
 
-                // Mensagens
                 onValue(ref(db, 'messages'), (snap) => {
                     const div = document.getElementById('chatMessages');
                     div.innerHTML = '';
-                    snap.forEach(s => div.innerHTML += `<div style="margin-bottom:10px;"><b>${s.val().sender}:</b> ${s.val().text}</div>`);
+                    snap.forEach(s => div.innerHTML += `<div><b>${s.val().sender}:</b> ${s.val().text}</div>`);
                     div.scrollTop = div.scrollHeight;
                 });
             } else {
