@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+    <!-- Integração OneSignal -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "06967f51-b093-4a60-a8b6-e963731e24a2",
+        });
+      });
+    </script>
+    <!-- Fim Integração OneSignal -->
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat Seguro - TK Company</title>
@@ -306,7 +318,6 @@
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // SEU FIREBASE CONFIGURADO E SEGURO
         const firebaseConfig = {
             apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
             authDomain: "tkbot-d91db.firebaseapp.com",
@@ -320,7 +331,6 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        // Elementos HTML
         const authContainer = document.getElementById('authContainer');
         const chatContainer = document.getElementById('chatContainer');
         const tabLoginBtn = document.getElementById('tabLoginBtn');
@@ -341,9 +351,8 @@
 
         let currentUser = null;
         let unsubscribeSnapshot = null;
-        let isInitialLoad = true; // Evita notificar mensagens antigas ao abrir o chat
+        let isInitialLoad = true;
 
-        // CONTROLE DE ABAS
         tabLoginBtn.addEventListener('click', () => {
             tabLoginBtn.classList.add('active'); tabRegisterBtn.classList.remove('active');
             loginForm.classList.add('active'); registerForm.classList.remove('active');
@@ -353,7 +362,6 @@
             registerForm.classList.add('active'); loginForm.classList.remove('active');
         });
 
-        // AUTENTICAÇÃO
         submitLoginBtn.addEventListener('click', async () => {
             const email = loginEmail.value.trim(); const password = loginPassword.value;
             if (!email || !password) return alert("Preencha todos os campos.");
@@ -376,7 +384,6 @@
                 authContainer.style.display = "none";
                 chatContainer.style.display = "flex";
                 
-                // Solicita permissão para enviar notificações nativas
                 if ("Notification" in window) {
                     Notification.requestPermission();
                 }
@@ -392,7 +399,6 @@
             }
         });
 
-        // ENVIAR MENSAGENS DIRETAS
         async function sendMessage() {
             const messageText = messageInput.value.trim();
             if (messageText === '' || !currentUser) return;
@@ -411,20 +417,17 @@
             }
         }
 
-        // FUNÇÃO PARA DISPARAR A NOTIFICAÇÃO NA BARRA DO SISTEMA
         function dispararNotificacao(remetente, texto) {
-            // Só notifica se a permissão foi aceita e se a aba não estiver focada no momento
             if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
                 const options = {
                     body: texto,
-                    icon: 'https://fav.farm/💬', // Ícone genérico de balão de chat
+                    icon: 'https://fav.farm/💬',
                     vibrate: [200, 100, 200]
                 };
                 new Notification(`Nova mensagem de ${remetente}`, options);
             }
         }
 
-        // ESCUTAR EM TEMPO REAL
         function startChatListener() {
             const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
             
@@ -471,7 +474,6 @@
                     chatMessages.appendChild(messageDiv);
                 });
 
-                // Se o carregamento inicial já passou e a última mensagem veio de outra pessoa, notifica!
                 if (!isInitialLoad && ultimaMensagem && ultimaMensagem.senderId !== currentUser.uid) {
                     dispararNotificacao(ultimaMensagem.senderEmail, ultimaMensagem.text);
                 }
