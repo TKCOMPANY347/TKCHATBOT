@@ -60,19 +60,21 @@
                 document.getElementById('chatContainer').style.display = 'flex';
                 document.getElementById('userDisplay').innerText = user.email + " (Online)";
 
+                // Lógica do Status Online
                 const statusRef = ref(db, 'status/' + user.uid);
                 set(statusRef, { state: 'online', last_changed: rtdbTimestamp() });
                 onDisconnect(statusRef).set({ state: 'offline', last_changed: rtdbTimestamp() });
 
+                // Escutar mensagens do Firestore
                 const q = query(collection(firestore, "messages"), orderBy("timestamp", "asc"));
                 onSnapshot(q, (snapshot) => {
                     const msgDiv = document.getElementById('chatMessages');
                     msgDiv.innerHTML = '';
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        // Corrigido: Se 'sender' não existir, usa 'Anônimo'
-                        const senderName = data.sender || "Anônimo";
-                        msgDiv.innerHTML += `<div class="msg"><b>${senderName}:</b> ${data.text}</div>`;
+                        // Se o 'sender' for undefined, mostra o e-mail ou 'Anônimo'
+                        const sender = data.sender || user.email || "Anônimo";
+                        msgDiv.innerHTML += `<div class="msg"><b>${sender}:</b> ${data.text}</div>`;
                     });
                     msgDiv.scrollTop = msgDiv.scrollHeight;
                 });
@@ -88,12 +90,16 @@
             const input = document.getElementById('msgInput');
             const text = input.value;
             if(text && auth.currentUser) {
-                input.value = ''; // Limpa o campo ANTES de enviar para evitar duplicidade
-                await addDoc(collection(firestore, "messages"), { 
-                    text: text, 
-                    sender: auth.currentUser.email, 
-                    timestamp: serverTimestamp() 
-                }).catch(e => alert("Erro ao enviar"));
+                try {
+                    await addDoc(collection(firestore, "messages"), { 
+                        text: text, 
+                        sender: auth.currentUser.email, 
+                        timestamp: serverTimestamp() 
+                    });
+                    input.value = '';
+                } catch (e) {
+                    alert("Erro ao enviar. Verifique as permissões do Firestore.");
+                }
             }
         });
     </script>
