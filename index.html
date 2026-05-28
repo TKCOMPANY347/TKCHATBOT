@@ -3,38 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TK Chat - Restaurado</title>
+    <title>TK Chat - Versão Estável</title>
     <style>
         body, html { height: 100%; margin: 0; font-family: sans-serif; }
-        #authContainer { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f0f2f5; }
-        #authContainer input, #authContainer button { width: 300px; padding: 12px; margin: 5px; border-radius: 8px; border: 1px solid #ccc; }
+        #authContainer { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f0f2f5; padding: 20px; }
+        #authContainer input { width: 100%; max-width: 300px; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; }
+        #authContainer button { width: 100%; max-width: 300px; padding: 12px; margin-bottom: 5px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; }
         #chatContainer { height: 100%; display: flex; flex-direction: column; }
         #chatHeader { padding: 15px; background: #075e54; color: white; display: flex; justify-content: space-between; }
         #chatMessages { flex: 1; padding: 20px; overflow-y: auto; background: #efeae2; }
         .input-area { padding: 15px; display: flex; background: white; border-top: 1px solid #ccc; }
-        input { flex: 1; padding: 10px; }
-        button { padding: 10px; cursor: pointer; }
+        input#msgInput { flex: 1; padding: 10px; margin-right: 10px; border: 1px solid #ccc; }
+        button#sendBtn { padding: 10px 20px; background: #075e54; color: white; border: none; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="authContainer">
-        <h2>Login</h2>
+        <h2>TK Chat</h2>
         <input type="email" id="email" placeholder="E-mail">
         <input type="password" id="password" placeholder="Senha">
-        <button id="loginBtn" style="background:#075e54; color:white;">Entrar</button>
-        <button id="registerBtn" style="background:#27ae60; color:white;">Criar Conta</button>
+        <button id="loginBtn" style="background:#075e54;">Entrar</button>
+        <button id="registerBtn" style="background:#27ae60;">Criar Conta</button>
     </div>
 
     <div id="chatContainer" style="display:none;">
         <div id="chatHeader">
             <span id="userDisplay"></span>
-            <button id="logoutBtn" style="background:#c0392b; color:white;">Sair</button>
+            <button id="logoutBtn" style="background:#c0392b; border:none; color:white; padding:5px;">Sair</button>
         </div>
         <div id="chatMessages"></div>
         <div class="input-area">
             <input type="text" id="msgInput" placeholder="Mensagem...">
-            <button id="sendBtn" style="background:#075e54; color:white;">Enviar</button>
+            <button id="sendBtn">Enviar</button>
         </div>
     </div>
 
@@ -63,7 +64,6 @@
                 document.getElementById('chatContainer').style.display = 'flex';
                 document.getElementById('userDisplay').innerText = user.email;
 
-                // Carrega mensagens (funcionalidade base)
                 onValue(ref(db, 'messages'), (snap) => {
                     const div = document.getElementById('chatMessages');
                     div.innerHTML = '';
