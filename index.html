@@ -60,19 +60,19 @@
                 document.getElementById('chatContainer').style.display = 'flex';
                 document.getElementById('userDisplay').innerText = user.email + " (Online)";
 
-                // Status Online
                 const statusRef = ref(db, 'status/' + user.uid);
                 set(statusRef, { state: 'online', last_changed: rtdbTimestamp() });
                 onDisconnect(statusRef).set({ state: 'offline', last_changed: rtdbTimestamp() });
 
-                // Carregar mensagens do Firestore
                 const q = query(collection(firestore, "messages"), orderBy("timestamp", "asc"));
                 onSnapshot(q, (snapshot) => {
                     const msgDiv = document.getElementById('chatMessages');
                     msgDiv.innerHTML = '';
                     snapshot.forEach(doc => {
                         const data = doc.data();
-                        msgDiv.innerHTML += `<div class="msg"><b>${data.sender}:</b> ${data.text}</div>`;
+                        // Corrigido: Se 'sender' não existir, usa 'Anônimo'
+                        const senderName = data.sender || "Anônimo";
+                        msgDiv.innerHTML += `<div class="msg"><b>${senderName}:</b> ${data.text}</div>`;
                     });
                     msgDiv.scrollTop = msgDiv.scrollHeight;
                 });
@@ -80,20 +80,20 @@
         });
 
         document.getElementById('loginBtn').addEventListener('click', () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Erro ao entrar"));
+            signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
+            .catch(e => alert("Erro ao entrar: " + e.message));
         });
 
         document.getElementById('sendBtn').addEventListener('click', async () => {
-            const text = document.getElementById('msgInput').value;
+            const input = document.getElementById('msgInput');
+            const text = input.value;
             if(text && auth.currentUser) {
+                input.value = ''; // Limpa o campo ANTES de enviar para evitar duplicidade
                 await addDoc(collection(firestore, "messages"), { 
                     text: text, 
                     sender: auth.currentUser.email, 
                     timestamp: serverTimestamp() 
-                });
-                document.getElementById('msgInput').value = '';
+                }).catch(e => alert("Erro ao enviar"));
             }
         });
     </script>
