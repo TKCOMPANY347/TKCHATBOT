@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TK Chat - Estável</title>
+    <title>TK Chat - Restaurado</title>
     <style>
         body, html { height: 100%; margin: 0; font-family: sans-serif; }
         #authContainer { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f0f2f5; }
@@ -19,7 +19,7 @@
 <body>
 
     <div id="authContainer">
-        <h2>Acesso ao Chat</h2>
+        <h2>Login</h2>
         <input type="email" id="email" placeholder="E-mail">
         <input type="password" id="password" placeholder="Senha">
         <button id="loginBtn" style="background:#075e54; color:white;">Entrar</button>
@@ -29,19 +29,19 @@
     <div id="chatContainer" style="display:none;">
         <div id="chatHeader">
             <span id="userDisplay"></span>
-            <button id="logoutBtn">Sair</button>
+            <button id="logoutBtn" style="background:#c0392b; color:white;">Sair</button>
         </div>
         <div id="chatMessages"></div>
         <div class="input-area">
             <input type="text" id="msgInput" placeholder="Mensagem...">
-            <button id="sendBtn">Enviar</button>
+            <button id="sendBtn" style="background:#075e54; color:white;">Enviar</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getDatabase, ref, push, onValue, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
@@ -63,7 +63,7 @@
                 document.getElementById('chatContainer').style.display = 'flex';
                 document.getElementById('userDisplay').innerText = user.email;
 
-                // Carregar apenas mensagens (o mais importante)
+                // Carrega mensagens (funcionalidade base)
                 onValue(ref(db, 'messages'), (snap) => {
                     const div = document.getElementById('chatMessages');
                     div.innerHTML = '';
@@ -73,11 +73,6 @@
                     });
                     div.scrollTop = div.scrollHeight;
                 });
-
-                // Atualizar status de forma isolada
-                const statusRef = ref(db, 'status/' + user.uid.replace(/\./g, '_'));
-                set(statusRef, { state: 'online' });
-                onDisconnect(statusRef).set({ state: 'offline' });
             } else {
                 document.getElementById('authContainer').style.display = 'flex';
                 document.getElementById('chatContainer').style.display = 'none';
@@ -88,8 +83,11 @@
         document.getElementById('registerBtn').onclick = () => createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
         document.getElementById('logoutBtn').onclick = () => signOut(auth);
         document.getElementById('sendBtn').onclick = () => {
-            push(ref(db, 'messages'), { text: document.getElementById('msgInput').value, sender: auth.currentUser.email });
-            document.getElementById('msgInput').value = '';
+            const input = document.getElementById('msgInput');
+            if(input.value) {
+                push(ref(db, 'messages'), { text: input.value, sender: auth.currentUser.email });
+                input.value = '';
+            }
         };
     </script>
 </body>
