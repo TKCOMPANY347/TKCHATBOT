@@ -3,92 +3,431 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TK Chat - Versão Estável</title>
+    <title>Chat Seguro com Abas de Acesso</title>
     <style>
-        body, html { height: 100%; margin: 0; font-family: sans-serif; }
-        #authContainer { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f0f2f5; padding: 20px; }
-        #authContainer input { width: 100%; max-width: 300px; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; }
-        #authContainer button { width: 100%; max-width: 300px; padding: 12px; margin-bottom: 5px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; }
-        #chatContainer { height: 100%; display: flex; flex-direction: column; }
-        #chatHeader { padding: 15px; background: #075e54; color: white; display: flex; justify-content: space-between; }
-        #chatMessages { flex: 1; padding: 20px; overflow-y: auto; background: #efeae2; }
-        .input-area { padding: 15px; display: flex; background: white; border-top: 1px solid #ccc; }
-        input#msgInput { flex: 1; padding: 10px; margin-right: 10px; border: 1px solid #ccc; }
-        button#sendBtn { padding: 10px 20px; background: #075e54; color: white; border: none; cursor: pointer; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+        }
+
+        /* CONTEINER DE AUTENTICAÇÃO */
+        .auth-container {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* MENU DE ABAS */
+        .auth-tabs {
+            display: flex;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: bold;
+            color: #555;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+
+        .tab-btn:hover {
+            background-color: #e8e8e8;
+        }
+
+        .tab-btn.active {
+            background-color: #fff;
+            color: #075e54;
+            border-bottom: 3px solid #00a884;
+        }
+
+        /* CONTEÚDO DOS FORMULÁRIOS */
+        .auth-content {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .auth-form {
+            display: none; /* Escondido por padrão */
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .auth-form.active {
+            display: flex; /* Mostra apenas a aba ativa */
+        }
+
+        .auth-content h2 {
+            color: #075e54;
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+
+        .auth-content input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .auth-content button {
+            background-color: #00a884;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .auth-content button:hover {
+            background-color: #008f72;
+        }
+
+        /* TELA DO CHAT FULL SCREEN */
+        .chat-container {
+            display: none; /* Só aparece após o login */
+            width: 100%;
+            height: 100%;
+            background-color: #fff;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background-color: #075e54;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .logout-btn {
+            background-color: #e53935;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #efeae2;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            word-wrap: break-word;
+        }
+
+        .message .sender-email {
+            font-size: 0.75rem;
+            color: #777;
+            display: block;
+            margin-bottom: 3px;
+            font-weight: bold;
+        }
+
+        .message.sent {
+            background-color: #d9fdd3;
+            align-self: flex-end;
+        }
+
+        .message.received {
+            background-color: #fff;
+            align-self: flex-start;
+        }
+
+        .chat-input-area {
+            display: flex;
+            padding: 15px;
+            background-color: #f0f0f0;
+            gap: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .chat-input-area input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            outline: none;
+            font-size: 1rem;
+        }
+
+        .chat-input-area button {
+            background-color: #00a884;
+            color: white;
+            border: none;
+            padding: 0 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-    <div id="authContainer">
-        <h2>TK Chat</h2>
-        <input type="email" id="email" placeholder="E-mail">
-        <input type="password" id="password" placeholder="Senha">
-        <button id="loginBtn" style="background:#075e54;">Entrar</button>
-        <button id="registerBtn" style="background:#27ae60;">Criar Conta</button>
+    <div class="auth-container" id="authContainer">
+        <div class="auth-tabs">
+            <button class="tab-btn active" id="tabLoginBtn">Entrar</button>
+            <button class="tab-btn" id="tabRegisterBtn">Cadastrar</button>
+        </div>
+
+        <div class="auth-content">
+            <div class="auth-form active" id="loginForm">
+                <h2>Acessar o Chat</h2>
+                <input type="email" id="loginEmail" placeholder="E-mail cadastrado" required>
+                <input type="password" id="loginPassword" placeholder="Sua senha" required>
+                <button id="submitLoginBtn">Fazer Login</button>
+            </div>
+
+            <div class="auth-form" id="registerForm">
+                <h2>Criar Nova Conta</h2>
+                <input type="email" id="registerEmail" placeholder="Escolha um e-mail válido" required>
+                <input type="password" id="registerPassword" placeholder="Defina uma senha (mín. 6 caracteres)" required>
+                <button id="submitRegisterBtn">Concluir Cadastro</button>
+            </div>
+        </div>
     </div>
 
-    <div id="chatContainer" style="display:none;">
-        <div id="chatHeader">
-            <span id="userDisplay"></span>
-            <button id="logoutBtn" style="background:#c0392b; border:none; color:white; padding:5px;">Sair</button>
+    <div class="chat-container" id="chatContainer">
+        <div class="chat-header">
+            <span id="userDisplay">Carregando usuário...</span>
+            <button class="logout-btn" id="logoutBtn">Sair</button>
         </div>
-        <div id="chatMessages"></div>
-        <div class="input-area">
-            <input type="text" id="msgInput" placeholder="Mensagem...">
-            <button id="sendBtn">Enviar</button>
+
+        <div class="chat-messages" id="chatMessages"></div>
+
+        <div class="chat-input-area">
+            <input type="text" id="messageInput" placeholder="Digite uma mensagem..." autocomplete="off">
+            <button id="sendButton">Enviar</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getDatabase, ref, push, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
             authDomain: "tkbot-d91db.firebaseapp.com",
-            databaseURL: "https://tkbot-d91db-default-rtdb.firebaseio.com",
             projectId: "tkbot-d91db",
-            storageBucket: "tkbot-d91db.appspot.com",
+            storageBucket: "tkbot-d91db.firebasestorage.app",
             messagingSenderId: "636885931448",
             appId: "1:636885931448:web:ea0884ab1d6674e5a4ab4d"
         };
 
+        // Inicializações
         const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
         const auth = getAuth(app);
-        const db = getDatabase(app);
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                document.getElementById('authContainer').style.display = 'none';
-                document.getElementById('chatContainer').style.display = 'flex';
-                document.getElementById('userDisplay').innerText = user.email;
+        // Elementos de Controle de Interface
+        const authContainer = document.getElementById('authContainer');
+        const chatContainer = document.getElementById('chatContainer');
+        const tabLoginBtn = document.getElementById('tabLoginBtn');
+        const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
 
-                onValue(ref(db, 'messages'), (snap) => {
-                    const div = document.getElementById('chatMessages');
-                    div.innerHTML = '';
-                    snap.forEach(s => {
-                        const data = s.val();
-                        div.innerHTML += `<div><b>${data.sender}:</b> ${data.text}</div>`;
-                    });
-                    div.scrollTop = div.scrollHeight;
-                });
-            } else {
-                document.getElementById('authContainer').style.display = 'flex';
-                document.getElementById('chatContainer').style.display = 'none';
+        // Inputs e Botões - Login
+        const loginEmail = document.getElementById('loginEmail');
+        const loginPassword = document.getElementById('loginPassword');
+        const submitLoginBtn = document.getElementById('submitLoginBtn');
+
+        // Inputs e Botões - Cadastro
+        const registerEmail = document.getElementById('registerEmail');
+        const registerPassword = document.getElementById('registerPassword');
+        const submitRegisterBtn = document.getElementById('submitRegisterBtn');
+
+        // Elementos do Chat
+        const userDisplay = document.getElementById('userDisplay');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
+
+        let currentUser = null;
+        let unsubscribeSnapshot = null;
+
+        // --- SISTEMA DE TROCA DE ABAS VISUAIS ---
+        tabLoginBtn.addEventListener('click', () => {
+            tabLoginBtn.classList.add('active');
+            tabRegisterBtn.classList.remove('active');
+            loginForm.classList.add('active');
+            registerForm.classList.remove('active');
+        });
+
+        tabRegisterBtn.addEventListener('click', () => {
+            tabRegisterBtn.classList.add('active');
+            tabLoginBtn.classList.remove('active');
+            registerForm.classList.add('active');
+            loginForm.classList.remove('active');
+        });
+
+        // --- LÓGICA DE AUTENTICAÇÃO ---
+
+        // Executar Login (Aba 1)
+        submitLoginBtn.addEventListener('click', async () => {
+            const email = loginEmail.value.trim();
+            const password = loginPassword.value;
+
+            if (!email || !password) {
+                alert("Por favor, digite o e-mail e a senha para entrar.");
+                return;
+            }
+
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+                loginEmail.value = "";
+                loginPassword.value = "";
+            } catch (error) {
+                console.error(error);
+                alert("Erro ao entrar: E-mail ou senha incorretos.");
             }
         });
 
-        document.getElementById('loginBtn').onclick = () => signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
-        document.getElementById('registerBtn').onclick = () => createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
-        document.getElementById('logoutBtn').onclick = () => signOut(auth);
-        document.getElementById('sendBtn').onclick = () => {
-            const input = document.getElementById('msgInput');
-            if(input.value) {
-                push(ref(db, 'messages'), { text: input.value, sender: auth.currentUser.email });
-                input.value = '';
+        // Executar Cadastro (Aba 2)
+        submitRegisterBtn.addEventListener('click', async () => {
+            const email = registerEmail.value.trim();
+            const password = registerPassword.value;
+
+            if (!email || !password) {
+                alert("Por favor, preencha todos os campos para se cadastrar.");
+                return;
             }
-        };
+
+            if (password.length < 6) {
+                alert("A senha precisa ter pelo menos 6 caracteres.");
+                return;
+            }
+
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                alert("Conta criada com sucesso! Você já foi conectado automaticamente.");
+                registerEmail.value = "";
+                registerPassword.value = "";
+            } catch (error) {
+                console.error(error);
+                alert("Erro no cadastro: " + error.message);
+            }
+        });
+
+        // Botão Sair
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth);
+        });
+
+        // Monitor de Sessão do Usuário
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                userDisplay.innerText = `Logado como: ${user.email}`;
+                authContainer.style.display = "none";
+                chatContainer.style.display = "flex";
+                startChatListener();
+            } else {
+                currentUser = null;
+                authContainer.style.display = "flex";
+                chatContainer.style.display = "none";
+                chatMessages.innerHTML = "";
+                if (unsubscribeSnapshot) unsubscribeSnapshot();
+            }
+        });
+
+        // --- LÓGICA DO CHAT EM TEMPO REAL ---
+
+        async function sendMessage() {
+            const messageText = messageInput.value.trim();
+            if (messageText === '' || !currentUser) return;
+
+            try {
+                await addDoc(collection(db, "messages"), {
+                    text: messageText,
+                    senderId: currentUser.uid,
+                    senderEmail: currentUser.email,
+                    timestamp: serverTimestamp()
+                });
+                messageInput.value = '';
+            } catch (error) {
+                console.error("Erro ao enviar mensagem:", error);
+            }
+        }
+
+        function startChatListener() {
+            const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
+            
+            unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+                chatMessages.innerHTML = '';
+
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (!data.timestamp) return;
+
+                    const messageType = data.senderId === currentUser.uid ? 'sent' : 'received';
+                    const messageDiv = document.createElement('div');
+                    messageDiv.classList.add('message', messageType);
+                    
+                    const emailHeader = messageType === 'received' ? `<span class="sender-email">${data.senderEmail}</span>` : '';
+                    
+                    messageDiv.innerHTML = `${emailHeader}${data.text}`;
+                    chatMessages.appendChild(messageDiv);
+                });
+
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            });
+        }
+
+        sendButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
     </script>
 </body>
 </html>
