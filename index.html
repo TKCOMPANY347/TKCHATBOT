@@ -316,10 +316,9 @@
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // SUA CHAVE DA IA CONFIGURADA
+        // SUA CHAVE CONFIGURADA E PRONTA AQUI:
         const GEMINI_API_KEY = "AIzaSyD-zvmEOkhv1FLgf5t1w7Kt3ld7iQ_L0Xg";
 
-        // CONFIGURAÇÃO RECONECTADA COM O SEU PROJETO TKBOT-D91DB
         const firebaseConfig = {
             apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
             authDomain: "tkbot-d91db.firebaseapp.com",
@@ -405,7 +404,6 @@
             if (hora >= 5 && hora < 12) saudacao = "Bom dia";
             else if (hora >= 12 && hora < 18) saudacao = "Boa tarde";
 
-            // Instruções do sistema para personalizar as respostas da IA
             const instrucaoEmpresa = `Instrução: Você é a Inteligência Virtual oficial e o Atendente inteligente da TK Company. Sempre inicie com '${saudacao}!'. Seja prestativo, empático e responda de forma muito inteligente e fluida. Caso o usuário queira informações sobre a nossa empresa, aborde os nossos tópicos: Internet ilimitada, aplicativo de streamer, programa de indicação de amigos e suporte técnico. Para quaisquer outras perguntas cotidianas, responda com sua inteligência natural normalmente de forma incrível.`;
 
             try {
@@ -436,7 +434,6 @@
             messageInput.value = '';
 
             try {
-                // 1. Salva o texto do usuário no banco Firestore
                 await addDoc(collection(db, "messages"), {
                     text: messageText,
                     senderId: currentUser.uid,
@@ -444,7 +441,6 @@
                     timestamp: serverTimestamp()
                 });
 
-                // 2. Dispara o Gemini e grava a resposta dele no Firestore
                 const respostaDaIA = await chamarInteligenciaGemini(messageText);
                 
                 await addDoc(collection(db, "messages"), {
