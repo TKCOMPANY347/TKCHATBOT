@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat Seguro - TK Company</title>
-    
+    <title>TK Chat</title>
     <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
     <script>
       window.OneSignalDeferred = window.OneSignalDeferred || [];
@@ -12,34 +11,40 @@
         await OneSignal.init({ appId: "06967f51-b093-4a60-a8b6-e963731e24a2" });
       });
     </script>
-
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        #chatContainer { width: 100%; max-width: 400px; background: white; border-radius: 10px; display: none; flex-direction: column; height: 90vh; }
-        #chatHeader { padding: 15px; background: #075e54; color: white; border-radius: 10px 10px 0 0; font-weight: bold; }
-        #chatMessages { flex: 1; padding: 15px; overflow-y: auto; }
+        body { font-family: sans-serif; background: #f0f2f5; margin: 0; display: flex; justify-content: center; height: 100vh; }
+        #authContainer, #chatContainer { width: 100%; max-width: 400px; background: white; height: 100%; display: flex; flex-direction: column; }
+        #chatHeader { padding: 15px; background: #075e54; color: white; font-weight: bold; }
+        #chatMessages { flex: 1; padding: 15px; overflow-y: auto; background: #efeae2; }
+        .input-area { padding: 10px; display: flex; border-top: 1px solid #ccc; }
+        input { flex: 1; padding: 10px; }
     </style>
 </head>
 <body>
 
     <div id="authContainer">
-        <h2>Bem-vindo</h2>
+        <h2 style="text-align:center">Login</h2>
         <input type="email" id="email" placeholder="E-mail">
         <input type="password" id="password" placeholder="Senha">
         <button id="loginBtn">Entrar</button>
     </div>
 
-    <div id="chatContainer">
+    <div id="chatContainer" style="display:none;">
         <div id="chatHeader">
-            <span id="userDisplay">Carregando...</span>
+            <span id="userDisplay"></span>
         </div>
         <div id="chatMessages"></div>
+        <div class="input-area">
+            <input type="text" id="msgInput" placeholder="Mensagem...">
+            <button id="sendBtn">Enviar</button>
+        </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getDatabase, ref, set, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
@@ -54,8 +59,8 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
+        const firestore = getFirestore(app);
 
-        // Ao logar, define status online no Realtime Database
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 document.getElementById('authContainer').style.display = 'none';
@@ -69,9 +74,15 @@
         });
 
         document.getElementById('loginBtn').addEventListener('click', () => {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('password').value;
-            signInWithEmailAndPassword(auth, email, pass).catch(e => alert("Erro ao entrar"));
+            signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
+        });
+
+        document.getElementById('sendBtn').addEventListener('click', async () => {
+            const text = document.getElementById('msgInput').value;
+            if(text) {
+                await addDoc(collection(firestore, "messages"), { text, sender: auth.currentUser.email, timestamp: serverTimestamp() });
+                document.getElementById('msgInput').value = '';
+            }
         });
     </script>
 </body>
