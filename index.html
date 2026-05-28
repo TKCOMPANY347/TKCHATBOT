@@ -6,8 +6,20 @@
     <title>TK Chat</title>
     <style>
         body, html { height: 100%; margin: 0; font-family: sans-serif; }
-        #authContainer, #chatContainer { height: 100%; display: flex; flex-direction: column; }
+        
+        /* Ajuste da tela de Login */
+        #authContainer { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; background-color: #f0f2f5; }
+        #authContainer h2 { color: #075e54; margin-bottom: 20px; }
+        #authContainer input { width: 100%; max-width: 300px; padding: 12px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        #authContainer button { width: 100%; max-width: 300px; padding: 12px; background: #075e54; color: white; border: none; border-radius: 8px; cursor: pointer; }
+
+        /* Estilização do Chat */
+        #chatContainer { height: 100%; display: flex; flex-direction: column; }
         #chatHeader { padding: 15px; background: #075e54; color: white; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* Painel de Presença */
+        #presencePanel { padding: 8px; background: #e0e0e0; font-size: 12px; color: #333; text-align: center; border-bottom: 1px solid #ccc; }
+        
         #chatMessages { flex: 1; padding: 15px; overflow-y: auto; background: #efeae2; }
         .input-area { padding: 10px; display: flex; background: white; border-top: 1px solid #ccc; }
         input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 4px; margin-right: 5px; }
@@ -30,6 +42,7 @@
             <span id="userDisplay"></span>
             <button id="logoutBtn">Sair</button>
         </div>
+        <div id="presencePanel">Carregando...</div>
         <div id="chatMessages"></div>
         <div class="input-area">
             <input type="text" id="msgInput" placeholder="Mensagem...">
@@ -60,16 +73,26 @@
             if (user) {
                 document.getElementById('authContainer').style.display = 'none';
                 document.getElementById('chatContainer').style.display = 'flex';
-                document.getElementById('userDisplay').innerText = user.email + " (Online)";
+                document.getElementById('userDisplay').innerText = user.email;
 
-                // Define status como online
+                // Status Online
                 const statusRef = ref(db, 'status/' + user.uid);
                 set(statusRef, { state: 'online', email: user.email });
                 onDisconnect(statusRef).set({ state: 'offline' });
 
+                // Painel de Presença: Monitora todos os status
+                onValue(ref(db, 'status'), (snapshot) => {
+                    let onlineUsers = [];
+                    snapshot.forEach((child) => {
+                        if (child.val().state === 'online') {
+                            onlineUsers.push(child.val().email);
+                        }
+                    });
+                    document.getElementById('presencePanel').innerText = "Online: " + onlineUsers.join(', ');
+                });
+
                 // Carrega mensagens
-                const messagesRef = ref(db, 'messages');
-                onValue(messagesRef, (snapshot) => {
+                onValue(ref(db, 'messages'), (snapshot) => {
                     const msgDiv = document.getElementById('chatMessages');
                     msgDiv.innerHTML = '';
                     snapshot.forEach((child) => {
@@ -89,7 +112,6 @@
         });
 
         document.getElementById('logoutBtn').addEventListener('click', () => {
-            // Define como offline antes de sair
             if(auth.currentUser) set(ref(db, 'status/' + auth.currentUser.uid), { state: 'offline' });
             signOut(auth);
         });
