@@ -264,7 +264,6 @@
 </head>
 <body>
 
-    <!-- PORTAL DE AUTENTICAÇÃO -->
     <div class="auth-container" id="authContainer">
         <div class="auth-tabs">
             <button class="tab-btn active" id="tabLoginBtn">Entrar</button>
@@ -288,7 +287,6 @@
         </div>
     </div>
 
-    <!-- TELA DO CHAT -->
     <div class="chat-container" id="chatContainer">
         <div class="chat-header">
             <span id="userDisplay">Carregando usuário...</span>
@@ -303,7 +301,6 @@
         </div>
     </div>
 
-    <!-- CONFIGURAÇÃO DO FIREBASE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -344,6 +341,7 @@
 
         let currentUser = null;
         let unsubscribeSnapshot = null;
+        let isInitialLoad = true; // Evita notificar mensagens antigas ao abrir o chat
 
         // CONTROLE DE ABAS
         tabLoginBtn.addEventListener('click', () => {
@@ -377,6 +375,13 @@
                 userDisplay.innerText = `Logado como: ${user.email}`;
                 authContainer.style.display = "none";
                 chatContainer.style.display = "flex";
+                
+                // Solicita permissão para enviar notificações nativas
+                if ("Notification" in window) {
+                    Notification.requestPermission();
+                }
+
+                isInitialLoad = true;
                 startChatListener();
             } else {
                 currentUser = null;
@@ -387,7 +392,7 @@
             }
         });
 
-        // ENVIAR MENSAGENS DIRETAS (SEM IA)
+        // ENVIAR MENSAGENS DIRETAS
         async function sendMessage() {
             const messageText = messageInput.value.trim();
             if (messageText === '' || !currentUser) return;
@@ -406,6 +411,19 @@
             }
         }
 
+        // FUNÇÃO PARA DISPARAR A NOTIFICAÇÃO NA BARRA DO SISTEMA
+        function dispararNotificacao(remetente, texto) {
+            // Só notifica se a permissão foi aceita e se a aba não estiver focada no momento
+            if ("Notification" in window && Notification.permission === "granted" && document.hidden) {
+                const options = {
+                    body: texto,
+                    icon: 'https://fav.farm/💬', // Ícone genérico de balão de chat
+                    vibrate: [200, 100, 200]
+                };
+                new Notification(`Nova mensagem de ${remetente}`, options);
+            }
+        }
+
         // ESCUTAR EM TEMPO REAL
         function startChatListener() {
             const q = query(collection(db, "messages"), orderBy("timestamp", "asc"));
@@ -413,12 +431,14 @@
             unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
                 chatMessages.innerHTML = '';
                 let lastSenderId = null;
+                let ultimaMensagem = null;
 
                 snapshot.forEach((doc) => {
                     const data = doc.data();
                     if (!data.timestamp) return;
 
-                    // Define estilo baseado em quem mandou (se foi você ou outra pessoa logada)
+                    ultimaMensagem = data;
+
                     let messageType = 'received';
                     if (data.senderId === currentUser.uid) {
                         messageType = 'sent';
@@ -451,6 +471,12 @@
                     chatMessages.appendChild(messageDiv);
                 });
 
+                // Se o carregamento inicial já passou e a última mensagem veio de outra pessoa, notifica!
+                if (!isInitialLoad && ultimaMensagem && ultimaMensagem.senderId !== currentUser.uid) {
+                    dispararNotificacao(ultimaMensagem.senderEmail, ultimaMensagem.text);
+                }
+
+                isInitialLoad = false;
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             });
         }
