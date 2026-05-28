@@ -3,42 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TK Chat - Full Screen</title>
+    <title>TK Chat</title>
     <style>
-        body, html { height: 100%; margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body, html { height: 100%; margin: 0; font-family: sans-serif; }
         #authContainer, #chatContainer { height: 100%; display: flex; flex-direction: column; }
-        #chatContainer { background: #f0f2f5; }
-        #chatHeader { padding: 15px; background: #075e54; color: white; font-weight: bold; }
+        #chatHeader { padding: 15px; background: #075e54; color: white; display: flex; justify-content: space-between; align-items: center; }
         #chatMessages { flex: 1; padding: 15px; overflow-y: auto; background: #efeae2; }
         .input-area { padding: 10px; display: flex; background: white; border-top: 1px solid #ccc; }
         input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 4px; margin-right: 5px; }
-        button { padding: 10px 20px; cursor: pointer; background: #075e54; color: white; border: none; border-radius: 4px; }
-        .msg { margin-bottom: 10px; padding: 10px; background: white; border-radius: 5px; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-        #authContainer { justify-content: center; align-items: center; padding: 20px; }
-        #authContainer input { width: 100%; max-width: 300px; margin-bottom: 10px; }
+        button { padding: 10px 15px; cursor: pointer; background: #075e54; color: white; border: none; border-radius: 4px; }
+        #logoutBtn { background: #c0392b; font-size: 12px; }
+        .msg { margin-bottom: 10px; padding: 10px; background: white; border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <div id="authContainer">
-        <h2>Acesso TK Chat</h2>
+        <h2>Login</h2>
         <input type="email" id="email" placeholder="E-mail">
         <input type="password" id="password" placeholder="Senha">
         <button id="loginBtn">Entrar</button>
     </div>
 
     <div id="chatContainer" style="display:none;">
-        <div id="chatHeader"><span id="userDisplay"></span></div>
+        <div id="chatHeader">
+            <span id="userDisplay"></span>
+            <button id="logoutBtn">Sair</button>
+        </div>
         <div id="chatMessages"></div>
         <div class="input-area">
-            <input type="text" id="msgInput" placeholder="Digite uma mensagem...">
+            <input type="text" id="msgInput" placeholder="Mensagem...">
             <button id="sendBtn">Enviar</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getDatabase, ref, push, onValue, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -61,12 +62,12 @@
                 document.getElementById('chatContainer').style.display = 'flex';
                 document.getElementById('userDisplay').innerText = user.email + " (Online)";
 
-                // Status Online
-                const statusRef = ref(db, 'status/' + user.uid.replace(/\./g, '_'));
-                set(statusRef, { state: 'online' });
+                // Define status como online
+                const statusRef = ref(db, 'status/' + user.uid);
+                set(statusRef, { state: 'online', email: user.email });
                 onDisconnect(statusRef).set({ state: 'offline' });
 
-                // Carregar Mensagens
+                // Carrega mensagens
                 const messagesRef = ref(db, 'messages');
                 onValue(messagesRef, (snapshot) => {
                     const msgDiv = document.getElementById('chatMessages');
@@ -77,12 +78,20 @@
                     });
                     msgDiv.scrollTop = msgDiv.scrollHeight;
                 });
+            } else {
+                document.getElementById('authContainer').style.display = 'flex';
+                document.getElementById('chatContainer').style.display = 'none';
             }
         });
 
         document.getElementById('loginBtn').addEventListener('click', () => {
-            signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value)
-            .catch(() => alert("Erro ao autenticar"));
+            signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            // Define como offline antes de sair
+            if(auth.currentUser) set(ref(db, 'status/' + auth.currentUser.uid), { state: 'offline' });
+            signOut(auth);
         });
 
         document.getElementById('sendBtn').addEventListener('click', () => {
