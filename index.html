@@ -2,40 +2,58 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <title>TK Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TK Chat Full Screen</title>
     <style>
-        body { font-family: sans-serif; height: 100vh; margin: 0; display: flex; flex-direction: column; }
-        #authContainer { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        #chatContainer { flex: 1; display: flex; flex-direction: column; }
-        #chatMessages { flex: 1; overflow-y: auto; background: #efeae2; padding: 10px; }
-        input { padding: 10px; margin: 5px; width: 250px; }
-        button { padding: 10px; cursor: pointer; }
+        body, html { height: 100%; margin: 0; font-family: sans-serif; }
+        
+        /* Layout de Login */
+        #authContainer { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #f0f2f5; padding: 20px; }
+        #authContainer h2 { color: #075e54; margin-bottom: 20px; }
+        #authContainer input { width: 100%; max-width: 350px; padding: 15px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+        #authContainer button { width: 100%; max-width: 350px; padding: 15px; margin-top: 10px; border: none; border-radius: 8px; cursor: pointer; color: white; font-weight: bold; }
+        .btn-login { background: #075e54; }
+        .btn-reg { background: #27ae60; }
+
+        /* Layout de Chat */
+        #chatContainer { height: 100%; display: flex; flex-direction: column; }
+        #chatHeader { padding: 15px; background: #075e54; color: white; display: flex; justify-content: space-between; align-items: center; }
+        #presencePanel { padding: 10px; background: #e0e0e0; font-size: 13px; text-align: center; border-bottom: 1px solid #ccc; }
+        #chatMessages { flex: 1; padding: 20px; overflow-y: auto; background: #efeae2; }
+        .input-area { padding: 15px; display: flex; background: white; border-top: 1px solid #ccc; }
+        input#msgInput { flex: 1; padding: 15px; border: 1px solid #ccc; border-radius: 5px; margin-right: 10px; }
+        button#sendBtn { padding: 0 25px; background: #075e54; color: white; border: none; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
+
     <div id="authContainer">
-        <h2>Login</h2>
-        <input type="email" id="email" placeholder="E-mail">
-        <input type="password" id="password" placeholder="Senha">
-        <button id="loginBtn">Entrar</button>
+        <h2>TK Chat - Acesso</h2>
+        <input type="email" id="email" placeholder="Seu E-mail">
+        <input type="password" id="password" placeholder="Sua Senha">
+        <button id="loginBtn" class="btn-login">Entrar</button>
+        <button id="registerBtn" class="btn-reg">Criar Nova Conta</button>
     </div>
 
     <div id="chatContainer" style="display:none;">
-        <div id="presencePanel" style="background:#ddd; padding:5px;">Online: ...</div>
+        <div id="chatHeader">
+            <span id="userDisplay"></span>
+            <button id="logoutBtn" style="background:#c0392b;">Sair</button>
+        </div>
+        <div id="presencePanel">Carregando quem está online...</div>
         <div id="chatMessages"></div>
-        <div style="padding:10px;">
-            <input type="text" id="msgInput" placeholder="Mensagem...">
+        <div class="input-area">
+            <input type="text" id="msgInput" placeholder="Escreva sua mensagem...">
             <button id="sendBtn">Enviar</button>
-            <button id="logoutBtn">Sair</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getDatabase, ref, push, onValue, set, onDisconnect } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-        const app = initializeApp({
+        const firebaseConfig = {
             apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
             authDomain: "tkbot-d91db.firebaseapp.com",
             databaseURL: "https://tkbot-d91db-default-rtdb.firebaseio.com",
@@ -43,8 +61,9 @@
             storageBucket: "tkbot-d91db.appspot.com",
             messagingSenderId: "636885931448",
             appId: "1:636885931448:web:ea0884ab1d6674e5a4ab4d"
-        });
+        };
 
+        const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getDatabase(app);
 
@@ -52,24 +71,26 @@
             if (user) {
                 document.getElementById('authContainer').style.display = 'none';
                 document.getElementById('chatContainer').style.display = 'flex';
-                
-                // Status Online
+                document.getElementById('userDisplay').innerText = user.email;
+
+                // Status: Online
                 const statusRef = ref(db, 'status/' + user.uid);
                 set(statusRef, { state: 'online', email: user.email });
                 onDisconnect(statusRef).set({ state: 'offline' });
 
-                // Monitorar usuários
+                // Painel de Presença
                 onValue(ref(db, 'status'), (snap) => {
-                    let online = [];
-                    snap.forEach(s => { if(s.val().state === 'online') online.push(s.val().email); });
-                    document.getElementById('presencePanel').innerText = "Online: " + online.join(', ');
+                    let onlineList = [];
+                    snap.forEach(s => { if(s.val().state === 'online') onlineList.push(s.val().email); });
+                    document.getElementById('presencePanel').innerText = "Online: " + onlineList.join(', ');
                 });
 
                 // Mensagens
                 onValue(ref(db, 'messages'), (snap) => {
                     const div = document.getElementById('chatMessages');
                     div.innerHTML = '';
-                    snap.forEach(s => div.innerHTML += `<div><b>${s.val().sender}:</b> ${s.val().text}</div>`);
+                    snap.forEach(s => div.innerHTML += `<div style="margin-bottom:10px;"><b>${s.val().sender}:</b> ${s.val().text}</div>`);
+                    div.scrollTop = div.scrollHeight;
                 });
             } else {
                 document.getElementById('authContainer').style.display = 'flex';
@@ -78,10 +99,17 @@
         });
 
         document.getElementById('loginBtn').onclick = () => signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
-        document.getElementById('logoutBtn').onclick = () => signOut(auth);
+        document.getElementById('registerBtn').onclick = () => createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
+        document.getElementById('logoutBtn').onclick = () => {
+            if(auth.currentUser) set(ref(db, 'status/' + auth.currentUser.uid), { state: 'offline' });
+            signOut(auth);
+        };
         document.getElementById('sendBtn').onclick = () => {
-            push(ref(db, 'messages'), { text: document.getElementById('msgInput').value, sender: auth.currentUser.email });
-            document.getElementById('msgInput').value = '';
+            const input = document.getElementById('msgInput');
+            if(input.value) {
+                push(ref(db, 'messages'), { text: input.value, sender: auth.currentUser.email });
+                input.value = '';
+            }
         };
     </script>
 </body>
