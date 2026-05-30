@@ -13,7 +13,9 @@
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
         button { width: 100%; padding: 12px; background: #075e54; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 15px; background: #efeae2; display: flex; flex-direction: column; gap: 10px; }
-        .chat-input { padding: 10px; background: #f0f0f0; display: flex; gap: 5px; }
+        .chat-input { padding: 10px; background: #f0f0f0; display: flex; gap: 5px; align-items: center; }
+        #msgInput { flex: 1; }
+        #btnSend { width: auto; }
     </style>
 </head>
 <body>
@@ -32,12 +34,15 @@
         <input type="text" id="regName" placeholder="Seu Nome">
         <input type="email" id="regEmail" placeholder="E-mail">
         <input type="password" id="regPass" placeholder="Senha">
-        <button id="btnRegister">Criar Conta</button>
+        <button id="btnRegister">Concluir Cadastro</button>
         <p style="text-align:center; margin-top:15px;"><a href="#" onclick="showScreen('loginScreen')">Voltar ao Login</a></p>
     </div>
 
     <div id="chatScreen" class="screen" style="padding:0;">
-        <div style="background:#075e54; color:white; padding:15px; font-weight:bold;">Atendimento TK</div>
+        <div style="background:#075e54; color:white; padding:15px; font-weight:bold; display:flex; justify-content:space-between;">
+            Atendimento TK
+            <span onclick="window.location.reload()" style="cursor:pointer; font-size:12px;">Sair</span>
+        </div>
         <div class="chat-messages" id="messages"></div>
         <div class="chat-input">
             <input type="text" id="msgInput" placeholder="Mensagem...">
@@ -48,7 +53,7 @@
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp, doc, setDoc, getDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -70,18 +75,11 @@
     };
 
     document.getElementById('btnRegister').onclick = async () => {
-        const nome = document.getElementById('regName').value;
-        const email = document.getElementById('regEmail').value;
-        const pass = document.getElementById('regPass').value;
-
-        if (pass.length < 6) return alert("Senha muito curta (mínimo 6 caracteres).");
-
         try {
-            const cred = await createUserWithEmailAndPassword(auth, email, pass);
-            await setDoc(doc(db, "users", cred.user.uid), { nome: nome });
+            await createUserWithEmailAndPassword(auth, document.getElementById('regEmail').value, document.getElementById('regPass').value);
             alert("Cadastro realizado!");
             showScreen('loginScreen');
-        } catch (e) { alert("Erro: " + e.message); }
+        } catch (e) { alert("Erro ao criar conta: " + e.message); }
     };
 
     document.getElementById('btnLogin').onclick = async () => {
@@ -89,6 +87,17 @@
             await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
             showScreen('chatScreen');
         } catch (e) { alert("Erro no Login: " + e.message); }
+    };
+
+    document.getElementById('btnSend').onclick = async () => {
+        const msg = document.getElementById('msgInput').value;
+        if (!msg) return;
+        await addDoc(collection(db, "mensagens"), {
+            texto: msg,
+            timestamp: serverTimestamp(),
+            usuario: auth.currentUser.email
+        });
+        document.getElementById('msgInput').value = '';
     };
 </script>
 </body>
