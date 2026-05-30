@@ -12,36 +12,60 @@
             display: flex; justify-content: center; align-items: center; 
         }
         .box { width: 90%; max-width: 400px; background: white; padding: 30px; border-radius: 15px; text-align: center; }
+        .tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid #ddd; }
+        .tab-btn { flex: 1; padding: 10px; cursor: pointer; border: none; background: none; font-weight: bold; }
+        .tab-btn.active { color: #075e54; border-bottom: 3px solid #075e54; }
+        .form-area { display: none; }
+        .form-area.active { display: block; }
         input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-        button { width: 100%; padding: 12px; background: #075e54; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button.btn-main { width: 100%; padding: 12px; background: #075e54; color: white; border: none; border-radius: 5px; cursor: pointer; }
         #painelStatus { display: none; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <div id="loginArea">
-        <h2>Acesso do Cliente</h2>
-        <input type="email" id="email" placeholder="Seu e-mail">
-        <input type="password" id="senha" placeholder="Senha">
-        <button id="btnLogin">Entrar no Painel</button>
+<div class="box" id="authBox">
+    <div class="tabs">
+        <div class="tab-btn active" onclick="showForm('login')">Entrar</div>
+        <div class="tab-btn" onclick="showForm('register')">Cadastrar</div>
     </div>
 
-    <div id="painelStatus">
-        <h2>Olá!</h2>
-        <div style="margin: 20px 0;">
-            <p>Seu Status Atual:</p>
-            <h2 id="meuStatus" style="color:#075e54; margin:10px 0;">Carregando...</h2>
-            <p id="minhaObs"></p>
-        </div>
-        <button onclick="location.reload()" style="background:#e53935;">Sair</button>
+    <div id="loginForm" class="form-area active">
+        <input type="email" id="email" placeholder="E-mail">
+        <input type="password" id="senha" placeholder="Senha">
+        <button class="btn-main" id="btnLogin">Entrar</button>
+    </div>
+
+    <div id="registerForm" class="form-area">
+        <input type="email" id="regEmail" placeholder="E-mail">
+        <input type="password" id="regSenha" placeholder="Senha">
+        <button class="btn-main" id="btnRegister">Cadastrar</button>
     </div>
 </div>
+
+<div class="box" id="painelStatus">
+    <h2>Olá!</h2>
+    <div style="margin: 20px 0;">
+        <p>Seu Status Atual:</p>
+        <h2 id="meuStatus" style="color:#075e54; margin:10px 0;">Carregando...</h2>
+        <p id="minhaObs"></p>
+    </div>
+    <button onclick="location.reload()" style="background:#e53935; border:none; padding:10px; color:white; cursor:pointer;">Sair</button>
+</div>
+
+<script>
+    function showForm(type) {
+        document.querySelectorAll('.form-area').forEach(f => f.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(type + 'Form').classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+</script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
@@ -56,30 +80,31 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    function mostrarPainel(user) {
+        document.getElementById('authBox').style.display = 'none';
+        document.getElementById('painelStatus').style.display = 'block';
+        onSnapshot(doc(db, "pedidos", user.uid), (doc) => {
+            if (doc.exists()) {
+                document.getElementById('meuStatus').innerText = doc.data().status;
+                document.getElementById('minhaObs').innerText = doc.data().obs;
+            } else {
+                document.getElementById('meuStatus').innerText = "Status pendente.";
+            }
+        });
+    }
+
     document.getElementById('btnLogin').onclick = async () => {
-        const email = document.getElementById('email').value;
-        const senha = document.getElementById('senha').value;
-        
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, senha);
-            const user = userCredential.user;
+            const user = (await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('senha').value)).user;
+            mostrarPainel(user);
+        } catch (e) { alert("Erro ao entrar!"); }
+    };
 
-            // Esconde login, mostra painel
-            document.getElementById('loginArea').style.display = 'none';
-            document.getElementById('painelStatus').style.display = 'block';
-
-            // Busca os dados APÓS o login bem-sucedido
-            onSnapshot(doc(db, "pedidos", user.uid), (doc) => {
-                if (doc.exists()) {
-                    document.getElementById('meuStatus').innerText = doc.data().status;
-                    document.getElementById('minhaObs').innerText = doc.data().obs;
-                } else {
-                    document.getElementById('meuStatus').innerText = "Status não cadastrado.";
-                }
-            });
-        } catch (e) {
-            alert("Erro: Verifique e-mail e senha.");
-        }
+    document.getElementById('btnRegister').onclick = async () => {
+        try {
+            const user = (await createUserWithEmailAndPassword(auth, document.getElementById('regEmail').value, document.getElementById('regSenha').value)).user;
+            alert("Cadastro realizado! Faça login agora.");
+        } catch (e) { alert("Erro no cadastro!"); }
     };
 </script>
 </body>
