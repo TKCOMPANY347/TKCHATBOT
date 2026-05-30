@@ -5,22 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TK Company - Painel</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { 
             background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('photo_2026-03-16_14-04-07.jpg');
             background-size: cover; background-position: center; height: 100vh;
             display: flex; justify-content: center; align-items: center; 
         }
-        .box { width: 90%; max-width: 400px; background: white; padding: 30px; border-radius: 15px; text-align: center; }
+        .box { width: 90%; max-width: 450px; background: white; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid #ddd; }
-        .tab-btn { flex: 1; padding: 10px; cursor: pointer; border: none; background: none; font-weight: bold; }
+        .tab-btn { flex: 1; padding: 10px; cursor: pointer; border: none; background: none; font-weight: bold; color: #555; }
         .tab-btn.active { color: #075e54; border-bottom: 3px solid #075e54; }
         .form-area { display: none; }
         .form-area.active { display: block; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-        button.btn-main { width: 100%; padding: 12px; background: #075e54; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ccc; border-radius: 8px; }
+        button.btn-main { width: 100%; padding: 12px; background: #075e54; color: white; border: none; border-radius: 8px; cursor: pointer; margin-top: 10px; }
+        
+        /* Estilos do Painel */
         #painelStatus { display: none; }
-        #adminControls { display: none; margin-top: 20px; border-top: 2px solid #075e54; padding-top: 20px; }
+        .status-badge { padding: 10px 25px; border-radius: 50px; color: white; font-weight: bold; display: inline-block; margin: 15px 0; }
+        #adminControls { display: none; margin-top: 25px; border-top: 2px dashed #075e54; padding-top: 20px; text-align: left; }
     </style>
 </head>
 <body>
@@ -43,22 +46,22 @@
 </div>
 
 <div class="box" id="painelStatus">
-    <h2>Olá!</h2>
-    <div style="margin: 20px 0;">
+    <h2>Olá, Cliente!</h2>
+    <div id="statusArea" style="margin: 20px 0;">
         <p>Seu Status Atual:</p>
-        <h2 id="meuStatus" style="color:#075e54; margin:10px 0;">Carregando...</h2>
-        <p id="minhaObs"></p>
+        <div id="statusBadge" class="status-badge" style="background:#6c757d;">Carregando...</div>
+        <p id="minhaObs" style="font-size: 0.9em; color: #666;"></p>
     </div>
 
     <div id="adminControls">
-        <h4 style="margin-bottom: 10px;">Painel Admin</h4>
+        <h4 style="margin-bottom: 10px; text-align: center;">Painel Admin</h4>
         <input type="text" id="adminUID" placeholder="UID do Cliente">
-        <input type="text" id="newStatus" placeholder="Novo Status">
-        <input type="text" id="newObs" placeholder="Nova Observação">
-        <button onclick="updatePedido()" style="background:#28a745; border:none; padding:10px; width:100%; color:white; cursor:pointer;">Atualizar Cliente</button>
+        <input type="text" id="newStatus" placeholder="Novo Status (ex: Concluído)">
+        <input type="text" id="newObs" placeholder="Observação">
+        <button onclick="updatePedido()" style="background:#28a745; color:white; border:none; padding:10px; width:100%; border-radius:8px; cursor:pointer;">Atualizar Cliente</button>
     </div>
 
-    <button onclick="location.reload()" style="margin-top:20px; background:#e53935; border:none; padding:10px; width:100%; color:white; cursor:pointer;">Sair</button>
+    <button onclick="location.reload()" style="margin-top:20px; background:#e53935; color:white; border:none; padding:10px; width:100%; border-radius:8px; cursor:pointer;">Sair</button>
 </div>
 
 <script>
@@ -88,13 +91,20 @@
     const db = getFirestore(app);
     const auth = getAuth(app);
 
+    // Função de cores dinâmicas
+    function getColor(status) {
+        if (status.includes("Concluído")) return "#28a745";
+        if (status.includes("Análise")) return "#007bff";
+        return "#6c757d";
+    }
+
     window.updatePedido = async () => {
         const uid = document.getElementById('adminUID').value;
         const status = document.getElementById('newStatus').value;
         const obs = document.getElementById('newObs').value;
         try {
             await setDoc(doc(db, "pedidos", uid), { status, obs });
-            alert("Pedido atualizado com sucesso!");
+            alert("Pedido atualizado!");
         } catch (e) { alert("Erro ao atualizar!"); }
     };
 
@@ -102,18 +112,16 @@
         document.getElementById('authBox').style.display = 'none';
         document.getElementById('painelStatus').style.display = 'block';
         
-        // Verifica se é o Admin
         if (user.email === "patrickrobert347@gmail.com") {
             document.getElementById('adminControls').style.display = 'block';
         }
 
         onSnapshot(doc(db, "pedidos", user.uid), (doc) => {
-            if (doc.exists()) {
-                document.getElementById('meuStatus').innerText = doc.data().status;
-                document.getElementById('minhaObs').innerText = doc.data().obs;
-            } else {
-                document.getElementById('meuStatus').innerText = "Nenhum status encontrado.";
-            }
+            const data = doc.exists() ? doc.data() : {status: "Pendente", obs: "Aguardando..."};
+            const badge = document.getElementById('statusBadge');
+            badge.innerText = data.status;
+            badge.style.backgroundColor = getColor(data.status);
+            document.getElementById('minhaObs').innerText = data.obs;
         });
     }
 
@@ -121,13 +129,13 @@
         try {
             const user = (await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('senha').value)).user;
             entrarNoPainel(user);
-        } catch (e) { alert("E-mail ou senha incorretos!"); }
+        } catch (e) { alert("Erro: Verifique os dados."); }
     };
 
     document.getElementById('btnRegister').onclick = async () => {
         try {
             await createUserWithEmailAndPassword(auth, document.getElementById('regEmail').value, document.getElementById('regSenha').value);
-            alert("Cadastro realizado com sucesso!");
+            alert("Cadastro realizado!");
         } catch (e) { alert("Erro no cadastro!"); }
     };
 </script>
