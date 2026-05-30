@@ -5,22 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TK Company - Atendimento</title>
     <style>
-        /* CSS Profissional e Responsivo */
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
         body { background: #f0f2f5; height: 100vh; display: flex; justify-content: center; align-items: center; }
-        
         .main-box { width: 100%; max-width: 450px; height: 100vh; background: white; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        
-        /* Telas */
-        .screen { display: none; flex-direction: column; height: 100%; padding: 20px; justify-content: center; }
+        .screen { display: none; flex-direction: column; padding: 20px; justify-content: center; height: 100%; }
         .screen.active { display: flex; }
-        
-        /* Inputs e Botões Profissionais */
         input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 8px; }
-        button { width: 100%; padding: 12px; background: #075e54; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        
-        /* Área de Chat */
-        #chatScreen { padding: 0; }
+        button { width: 100%; padding: 12px; background: #075e54; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; }
         .chat-messages { flex: 1; overflow-y: auto; padding: 15px; background: #efeae2; display: flex; flex-direction: column; gap: 10px; }
         .chat-input { padding: 10px; background: #f0f0f0; display: flex; gap: 5px; }
     </style>
@@ -30,10 +21,10 @@
 <div class="main-box">
     <div id="loginScreen" class="screen active">
         <h2>Login TK Company</h2>
-        <input type="email" id="email" placeholder="E-mail">
-        <input type="password" id="pass" placeholder="Senha">
+        <input type="email" id="loginEmail" placeholder="E-mail">
+        <input type="password" id="loginPassword" placeholder="Senha">
         <button id="btnLogin">Entrar</button>
-        <p style="text-align:center; margin-top:10px;">Não tem conta? <a href="#" id="goRegister">Cadastre-se</a></p>
+        <p style="text-align:center; margin-top:15px;">Não tem conta? <a href="#" onclick="showScreen('registerScreen')">Cadastre-se</a></p>
     </div>
 
     <div id="registerScreen" class="screen">
@@ -42,10 +33,11 @@
         <input type="email" id="regEmail" placeholder="E-mail">
         <input type="password" id="regPass" placeholder="Senha">
         <button id="btnRegister">Criar Conta</button>
+        <p style="text-align:center; margin-top:15px;"><a href="#" onclick="showScreen('loginScreen')">Voltar ao Login</a></p>
     </div>
 
-    <div id="chatScreen" class="screen">
-        <div style="background:#075e54; color:white; padding:15px;">Atendimento TK</div>
+    <div id="chatScreen" class="screen" style="padding:0;">
+        <div style="background:#075e54; color:white; padding:15px; font-weight:bold;">Atendimento TK</div>
         <div class="chat-messages" id="messages"></div>
         <div class="chat-input">
             <input type="text" id="msgInput" placeholder="Mensagem...">
@@ -55,18 +47,49 @@
 </div>
 
 <script type="module">
-    // IMPORTES E CONFIGURAÇÕES AQUI (mantenha os mesmos que você já tem)
-    
-    // Função para trocar de tela
-    function showScreen(id) {
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, doc, setDoc, getDoc, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
+        authDomain: "tkbot-d91db.firebaseapp.com",
+        projectId: "tkbot-d91db",
+        storageBucket: "tkbot-d91db.firebasestorage.app",
+        messagingSenderId: "636885931448",
+        appId: "1:636885931448:web:ea0884ab1d6674e5a4ab4d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    window.showScreen = (id) => {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-    }
+    };
 
-    // LÓGICA DE NAVEGAÇÃO
-    document.getElementById('goRegister').onclick = () => showScreen('registerScreen');
-    
-    // O RESTANTE DA LÓGICA (Login, Cadastro e Chat) segue o padrão que testamos
+    document.getElementById('btnRegister').onclick = async () => {
+        const nome = document.getElementById('regName').value;
+        const email = document.getElementById('regEmail').value;
+        const pass = document.getElementById('regPass').value;
+
+        if (pass.length < 6) return alert("Senha muito curta (mínimo 6 caracteres).");
+
+        try {
+            const cred = await createUserWithEmailAndPassword(auth, email, pass);
+            await setDoc(doc(db, "users", cred.user.uid), { nome: nome });
+            alert("Cadastro realizado!");
+            showScreen('loginScreen');
+        } catch (e) { alert("Erro: " + e.message); }
+    };
+
+    document.getElementById('btnLogin').onclick = async () => {
+        try {
+            await signInWithEmailAndPassword(auth, document.getElementById('loginEmail').value, document.getElementById('loginPassword').value);
+            showScreen('chatScreen');
+        } catch (e) { alert("Erro no Login: " + e.message); }
+    };
 </script>
 </body>
 </html>
