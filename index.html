@@ -5,20 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat IA Seguro</title>
     <style>
-        /* Mantenha seu CSS original aqui */
-        body { font-family: sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .chat-container { width: 400px; height: 500px; background: white; display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .chat-header { background-color: #075e54; color: white; padding: 15px; text-align: center; }
+        /* CSS mantido conforme seu projeto */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+        body { background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .auth-container, .chat-container { width: 400px; height: 500px; background: white; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; overflow: hidden; }
+        .chat-container { display: none; } /* Escondido até o login */
         .chat-messages { flex: 1; padding: 15px; overflow-y: auto; background-color: #efeae2; display: flex; flex-direction: column; gap: 10px; }
-        .chat-input-area { display: flex; padding: 10px; background: #f0f0f0; }
-        input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
-        button { margin-left: 5px; padding: 10px 20px; border-radius: 20px; border: none; background: #00a884; color: white; cursor: pointer; }
+        .chat-input-area { display: flex; padding: 10px; background: #f0f0f0; gap: 5px; }
+        input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; border-radius: 20px; border: none; background: #00a884; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="chat-container">
-        <div class="chat-header"><span>IA Chatbot</span></div>
+    <div class="auth-container" id="authContainer">
+        <div style="padding: 30px;">
+            <input type="email" id="loginEmail" placeholder="E-mail" style="width:100%; padding:10px; margin-bottom:10px;">
+            <input type="password" id="loginPassword" placeholder="Senha" style="width:100%; padding:10px; margin-bottom:10px;">
+            <button id="submitLoginBtn" style="width:100%;">Entrar</button>
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer">
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-area">
             <input type="text" id="messageInput" placeholder="Digite...">
@@ -29,18 +37,45 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import Groq from "https://cdn.skypack.dev/groq-sdk";
 
-        const firebaseConfig = { /* SEU FIREBASE CONFIG AQUI */ };
+        // COPIE SEUS DADOS AQUI DO SEU ARQUIVO ANTIGO
+        const firebaseConfig = {
+            apiKey: "AIzaSyDkpjVCN_Nj6hSsakz5kDYrSOwCA2oPMcE",
+            authDomain: "tkbot-d91db.firebaseapp.com",
+            projectId: "tkbot-d91db",
+            storageBucket: "tkbot-d91db.firebasestorage.app",
+            messagingSenderId: "636885931448",
+            appId: "1:636885931448:web:ea0884ab1d6674e5a4ab4d"
+        };
+
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
 
+        // LÓGICA DE LOGIN
+        document.getElementById('submitLoginBtn').addEventListener('click', async () => {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPassword').value;
+            try {
+                await signInWithEmailAndPassword(auth, email, pass);
+            } catch(e) { alert("Erro no login"); }
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('authContainer').style.display = 'none';
+                document.getElementById('chatContainer').style.display = 'flex';
+            }
+        });
+
+        // LÓGICA DO CHAT COM IA
         async function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const texto = input.value.trim();
+            const texto = document.getElementById('messageInput').value.trim();
             if (!texto) return;
 
-            // LÓGICA DE SEGURANÇA: Chave dinâmica
+            // Pede a chave se não existir
             let apiKey = localStorage.getItem("groq_key");
             if (!apiKey) {
                 apiKey = prompt("Cole sua chave da API Groq aqui:");
@@ -50,26 +85,21 @@
 
             const groq = new Groq({ apiKey: apiKey, dangerouslyAllowBrowser: true });
 
-            // 1. Salva no Firebase
-            await addDoc(collection(db, "messages"), { text: texto, senderId: "usuario", timestamp: serverTimestamp() });
-            input.value = '';
+            // Salva pergunta
+            await addDoc(collection(db, "messages"), { text: texto, senderId: "user", timestamp: serverTimestamp() });
+            
+            // IA responde
+            const chatCompletion = await groq.chat.completions.create({
+                messages: [{ role: "user", content: texto }],
+                model: "llama3-70b-8192",
+            });
 
-            // 2. Chama a IA
-            try {
-                const completion = await groq.chat.completions.create({
-                    messages: [{ role: "user", content: texto }],
-                    model: "llama3-70b-8192",
-                });
-                
-                // 3. Salva a resposta da IA
-                await addDoc(collection(db, "messages"), { 
-                    text: completion.choices[0].message.content, 
-                    senderId: "IA_BOT", 
-                    timestamp: serverTimestamp() 
-                });
-            } catch (err) {
-                alert("Erro: Verifique sua chave da Groq.");
-            }
+            await addDoc(collection(db, "messages"), { 
+                text: chatCompletion.choices[0].message.content, 
+                senderId: "IA", 
+                timestamp: serverTimestamp() 
+            });
+            document.getElementById('messageInput').value = '';
         }
 
         document.getElementById('sendButton').addEventListener('click', sendMessage);
