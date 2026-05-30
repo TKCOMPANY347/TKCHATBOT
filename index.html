@@ -3,16 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat com IA Integrada</title>
+    <title>Chat IA Seguro</title>
     <style>
         /* Mantenha seu CSS original aqui */
         body { font-family: sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .chat-container { width: 400px; height: 500px; background: white; display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .chat-header { background-color: #075e54; color: white; padding: 15px; text-align: center; }
         .chat-messages { flex: 1; padding: 15px; overflow-y: auto; background-color: #efeae2; display: flex; flex-direction: column; gap: 10px; }
-        .message { padding: 8px 12px; border-radius: 8px; max-width: 80%; }
-        .sent { background-color: #d9fdd3; align-self: flex-end; }
-        .received { background-color: #fff; align-self: flex-start; }
         .chat-input-area { display: flex; padding: 10px; background: #f0f0f0; }
         input { flex: 1; padding: 10px; border-radius: 20px; border: 1px solid #ccc; outline: none; }
         button { margin-left: 5px; padding: 10px 20px; border-radius: 20px; border: none; background: #00a884; color: white; cursor: pointer; }
@@ -20,7 +17,7 @@
 </head>
 <body>
 
-    <div class="chat-container" id="chatContainer">
+    <div class="chat-container">
         <div class="chat-header"><span>IA Chatbot</span></div>
         <div class="chat-messages" id="chatMessages"></div>
         <div class="chat-input-area">
@@ -32,52 +29,46 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import Groq from "https://cdn.skypack.dev/groq-sdk";
 
-        const firebaseConfig = {
-            // Insira seus dados do Firebase aqui
-        };
-
+        const firebaseConfig = { /* SEU FIREBASE CONFIG AQUI */ };
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const auth = getAuth(app);
-
-        // Chave da IA
-        const groq = new Groq({ 
-            apiKey: "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", 
-            dangerouslyAllowBrowser: true 
-        });
 
         async function sendMessage() {
             const input = document.getElementById('messageInput');
             const texto = input.value.trim();
             if (!texto) return;
 
+            // LÓGICA DE SEGURANÇA: Chave dinâmica
+            let apiKey = localStorage.getItem("groq_key");
+            if (!apiKey) {
+                apiKey = prompt("Cole sua chave da API Groq aqui:");
+                if (apiKey) localStorage.setItem("groq_key", apiKey);
+                else return;
+            }
+
+            const groq = new Groq({ apiKey: apiKey, dangerouslyAllowBrowser: true });
+
             // 1. Salva no Firebase
-            await addDoc(collection(db, "messages"), {
-                text: texto,
-                senderId: "usuario",
-                timestamp: serverTimestamp()
-            });
+            await addDoc(collection(db, "messages"), { text: texto, senderId: "usuario", timestamp: serverTimestamp() });
             input.value = '';
 
             // 2. Chama a IA
             try {
-                const chatCompletion = await groq.chat.completions.create({
+                const completion = await groq.chat.completions.create({
                     messages: [{ role: "user", content: texto }],
                     model: "llama3-70b-8192",
                 });
-                const respostaIA = chatCompletion.choices[0].message.content;
-
-                // 3. Salva a resposta da IA no Firebase
-                await addDoc(collection(db, "messages"), {
-                    text: respostaIA,
-                    senderId: "IA_BOT",
-                    timestamp: serverTimestamp()
+                
+                // 3. Salva a resposta da IA
+                await addDoc(collection(db, "messages"), { 
+                    text: completion.choices[0].message.content, 
+                    senderId: "IA_BOT", 
+                    timestamp: serverTimestamp() 
                 });
             } catch (err) {
-                console.error("Erro:", err);
+                alert("Erro: Verifique sua chave da Groq.");
             }
         }
 
